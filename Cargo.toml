@@ -3,3 +3,6 @@
 name = "nn"
 version = "0.0.1"
 authors = ["Jack Montgomery <jackm321@gmail.com>"]
+
+[dependencies]
+rand = "0.2.0"
