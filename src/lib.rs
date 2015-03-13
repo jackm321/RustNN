@@ -1,6 +1,8 @@
 extern crate rand;
 use HaltCondition::{ Epochs, MSE };
 use UpdateRule::{ Stochastic, Batch };
+use std::iter::{Zip, Enumerate};
+use std::slice;
 
 #[test]
 fn it_works() {
@@ -93,7 +95,7 @@ impl NN {
                 }
             }
         }
-        
+
         unimplemented!();
     }
 
@@ -116,8 +118,70 @@ fn update_weights(nn: &mut NN, weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas:
 
 
 fn calculate_weight_update_info(nn: &NN, results: &Vec<Vec<f64>>, targets: &[f64]) -> Vec<Vec<Vec<f64>>> {
-    unimplemented!()
+    let mut network_errors = Vec::new();
+    let mut network_weight_updates = Vec::new();
+
+    let mut next_layer_errors: Vec<f64> = Vec::new(); // TODO: find a way to not do this
+
+    let layers = &nn.layers;
+    let network_results = &results[1..]; // skip the input layer
+
+    for (layer_index, (layer_nodes, layer_results)) in iterZipEnum(layers, network_results) {
+        let prev_layer_results = &results[layer_index];
+        let mut layer_errors = Vec::new();
+        let mut layer_weight_updates = Vec::new();
+        
+        let next_layer_nodes: &Layer = &&layers[layer_index+1];
+
+        for (node_index, (node, &result)) in iterZipEnum(layer_nodes, layer_results) {
+            let mut node_weight_updates = Vec::new();
+            let mut node_error = 0f64;
+            
+            // calculate error for this node
+            if layer_index == layers.len() - 1 {
+                node_error = result * (1f64 - result) * (targets[node_index] - result);
+            } else {
+                let mut sum = 0f64;
+                for (next_node, &next_node_error_data) in next_layer_nodes.iter().zip(next_layer_errors.iter()) {
+                    sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
+                }
+                node_error = result * (1f64 - result) * sum;
+            }
+
+            // calculate weight updates for this node
+            for weight_index in 0..node.len() {
+                let mut prev_layer_result = 1f64;
+                if weight_index == 0 {
+                    prev_layer_result = 1.0; // theshold
+                } else {
+                    prev_layer_result = prev_layer_results[weight_index-1];
+                }
+                let weight_update = node_error * prev_layer_result;
+                node_weight_updates.push(weight_update);
+            }
+
+            layer_errors.push(node_error);
+            layer_weight_updates.push(node_weight_updates);
+        }
+
+        next_layer_errors = layer_errors.clone();
+
+        network_errors.push(layer_errors);
+        network_weight_updates.push(layer_weight_updates);
+    }
+
+    // updates were build by backpropagation so reverse them
+    network_weight_updates.reverse();
+
+    network_weight_updates
 }
+
+fn iterZipEnum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
+    Enumerate<Zip<slice::Iter<'s, S>, slice::Iter<'t, T>>>  {
+    s.iter().zip(t.iter()).enumerate()
+}
+
+
 
 fn calculate_error(results: &Vec<Vec<f64>>, targets: &[f64]) -> f64 {
     unimplemented!()
