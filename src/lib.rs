@@ -65,13 +65,13 @@ impl NN {
                 error_sum += calculate_error(&results, targets);
                 match update_rule {
                     Batch => update_batch_data(&mut batch_data, &weight_updates),
-                    Stochastic => update_weights(self, &weight_updates, &mut prev_deltas),
+                    Stochastic => update_weights(self, &weight_updates, &mut prev_deltas, rate, momentum),
                 }
             }
 
             // if we're in batch mode, update the weights now
             match update_rule {
-                Batch => update_weights(self, &batch_data, &mut prev_deltas),
+                Batch => update_weights(self, &batch_data, &mut prev_deltas, rate, momentum),
                 Stochastic => (),
             }
 
@@ -112,8 +112,23 @@ fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , weight_updates: &Vec<
     unimplemented!()
 }
 
-fn update_weights(nn: &mut NN, weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>) {
-    unimplemented!()
+fn update_weights(nn: &mut NN, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>, rate: f64, momentum: f64) {
+    for layer_index in 0..nn.layers.len() {
+        let mut layer = &mut nn.layers[layer_index];
+        let layer_weight_updates = &network_weight_updates[layer_index];
+        for node_index in 0..layer.len() {
+            let mut node = &mut layer[node_index];
+            let node_weight_updates = &layer_weight_updates[node_index];
+            for weight_index in 0..node.len() {
+                let weight = node[weight_index];
+                let weight_update = node_weight_updates[weight_index];
+                let prev_delta = prev_deltas[layer_index][node_index][weight_index];
+                let delta = (rate * weight_update) + (momentum * prev_delta);
+                node[weight_index] += delta;
+                prev_deltas[layer_index][node_index][weight_index] = delta;
+            }
+        }
+    } 
 }
 
 
@@ -180,8 +195,6 @@ fn iterZipEnum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
     Enumerate<Zip<slice::Iter<'s, S>, slice::Iter<'t, T>>>  {
     s.iter().zip(t.iter()).enumerate()
 }
-
-
 
 fn calculate_error(results: &Vec<Vec<f64>>, targets: &[f64]) -> f64 {
     unimplemented!()
