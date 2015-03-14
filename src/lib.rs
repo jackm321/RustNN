@@ -5,6 +5,10 @@ use std::iter::{Zip, Enumerate};
 use std::slice;
 use std::num::Float;
 
+static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
+static DEFAULT_MOMENTUM: f64 = 0f64;
+static DEFAULT_EPOCHS: usize = 1000;
+
 #[test]
 fn it_works() {
 }
@@ -25,10 +29,6 @@ pub enum UpdateRule {
     Stochastic,
     Batch
 }
-
-static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
-static DEFAULT_MOMENTUM: f64 = 0f64;
-static DEFAULT_EPOCHS: usize = 1000;
 
 #[derive(Debug)]
 struct Trainer<'a> {
@@ -105,7 +105,6 @@ impl NN {
             threads: 1,
             nn: self
         }
-        // unimplemented!()
     }
 
     // returns a results with ok being the error rate of the network found at the end and
@@ -124,7 +123,7 @@ impl NN {
 
             for &(inputs, targets) in examples.iter() {
                 let results = do_run(self, inputs);
-                let weight_updates = calculate_weight_update_info(self, &results, &targets);
+                let weight_updates = calculate_weight_updates(self, &results, &targets);
                 error_sum += calculate_error(&results, targets);
                 match update_rule {
                     Batch => update_batch_data(&mut batch_data, &weight_updates),
@@ -190,13 +189,25 @@ fn modified_dotprod(node: &Node, values: &Vec<f64>) -> f64 {
 }
 
 fn sigmoid(y: f64) -> f64 {
-    1.0 / (1.0 + Float::exp(-y))
+    1f64 / (1f64 + Float::exp(-y))
 }
 
-fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , weight_updates: &Vec<Vec<Vec<f64>>>) {
-    unimplemented!()
+// adds new network weight updates into the update updates already collected
+fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , network_weight_updates: &Vec<Vec<Vec<f64>>>) {
+    for layer_index in 0..batch_data.len() {
+        let mut batch_layer = &mut batch_data[layer_index];
+        let layer_weight_updates = &network_weight_updates[layer_index];
+        for node_index in 0..batch_layer.len() {
+            let mut batch_node = &mut batch_layer[node_index];
+            let node_weight_updates = &layer_weight_updates[node_index];
+            for weight_index in 0..batch_node.len() {
+                batch_node[weight_index] += node_weight_updates[weight_index];
+            }
+        }
+    } 
 }
 
+// updates all weights in the network
 fn update_weights(nn: &mut NN, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>, rate: f64, momentum: f64) {
     for layer_index in 0..nn.layers.len() {
         let mut layer = &mut nn.layers[layer_index];
@@ -216,8 +227,8 @@ fn update_weights(nn: &mut NN, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev
     } 
 }
 
-
-fn calculate_weight_update_info(nn: &NN, results: &Vec<Vec<f64>>, targets: &[f64]) -> Vec<Vec<Vec<f64>>> {
+// calculates all weight updates by backpropagation
+fn calculate_weight_updates(nn: &NN, results: &Vec<Vec<f64>>, targets: &[f64]) -> Vec<Vec<Vec<f64>>> {
     let mut network_errors = Vec::new();
     let mut network_weight_updates = Vec::new();
 
@@ -226,14 +237,14 @@ fn calculate_weight_update_info(nn: &NN, results: &Vec<Vec<f64>>, targets: &[f64
     let layers = &nn.layers;
     let network_results = &results[1..]; // skip the input layer
 
-    for (layer_index, (layer_nodes, layer_results)) in iterZipEnum(layers, network_results) {
+    for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results) {
         let prev_layer_results = &results[layer_index];
         let mut layer_errors = Vec::new();
         let mut layer_weight_updates = Vec::new();
         
         let next_layer_nodes: &Layer = &&layers[layer_index+1];
 
-        for (node_index, (node, &result)) in iterZipEnum(layer_nodes, layer_results) {
+        for (node_index, (node, &result)) in iter_zip_enum(layer_nodes, layer_results) {
             let mut node_weight_updates = Vec::new();
             let mut node_error = 0f64;
             
@@ -252,7 +263,7 @@ fn calculate_weight_update_info(nn: &NN, results: &Vec<Vec<f64>>, targets: &[f64
             for weight_index in 0..node.len() {
                 let mut prev_layer_result = 1f64;
                 if weight_index == 0 {
-                    prev_layer_result = 1.0; // theshold
+                    prev_layer_result = 1f64; // theshold
                 } else {
                     prev_layer_result = prev_layer_results[weight_index-1];
                 }
@@ -276,7 +287,7 @@ fn calculate_weight_update_info(nn: &NN, results: &Vec<Vec<f64>>, targets: &[f64
     network_weight_updates
 }
 
-fn iterZipEnum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
+fn iter_zip_enum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
     Enumerate<Zip<slice::Iter<'s, S>, slice::Iter<'t, T>>>  {
     s.iter().zip(t.iter()).enumerate()
 }
@@ -291,7 +302,7 @@ fn make_weights_tracker<T: Clone>(layers: &Vec<Layer>, place_holder: T) -> Vec<V
         let mut layer_level = Vec::new();
         for node in layer.iter() {
             let mut node_level = Vec::new();
-            for weight in node.iter() {
+            for _ in node.iter() {
                 node_level.push(place_holder.clone());
             }
             layer_level.push(node_level);
@@ -302,7 +313,7 @@ fn make_weights_tracker<T: Clone>(layers: &Vec<Layer>, place_holder: T) -> Vec<V
     network_level
 }
 
-fn new_nn(layers_sizes: &[usize]) -> NN {
+fn new(layers_sizes: &[usize]) -> NN {
         if layers_sizes.len() < 2 {
             panic!("must have at least two layers");
         }
