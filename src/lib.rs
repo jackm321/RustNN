@@ -3,6 +3,7 @@ use HaltCondition::{ Epochs, MSE };
 use UpdateRule::{ Stochastic, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
+use std::num::Float;
 
 #[test]
 fn it_works() {
@@ -47,7 +48,7 @@ impl NN {
 
     // returns a results with ok being the error rate of the network found at the end and
     // Err is a string with an explaination
-    fn train_option(&mut self, examples: &[(&[f64], &[f64])], rate: f64, momentum: f64, log_interval: Option<usize>,
+    fn train_option(&mut self, examples: &[(&Vec<f64>, &Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
                     halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> Result<usize, &str> {
 
         let mut epochs = 0;
@@ -99,13 +100,35 @@ impl NN {
         unimplemented!();
     }
 
-    fn run(&self, inputs: &[f64]) -> &[f64]{
+    fn run(&self, inputs: &Vec<f64>) -> Vec<f64>{
         unimplemented!()
     }
 }
 
-fn do_run(nn: &NN, inputs: &[f64]) -> Vec<Vec<f64>>{
-    unimplemented!()
+fn do_run(nn: &NN, inputs: &Vec<f64>) -> Vec<Vec<f64>>{
+    let mut results = Vec::new();
+    results.push(inputs.clone());
+    let mut prev_layer_results = inputs;
+    for layer in nn.layers.iter() {
+        let mut layer_results = Vec::new();
+        for node in layer.iter() {
+            layer_results.push( sigmoid(modified_dotprod(&node, &prev_layer_results)) )
+        }
+        results.push(layer_results);
+    }
+    results
+}
+
+fn modified_dotprod(node: &Node, values: &Vec<f64>) -> f64 {
+    let mut total = node[0]; // for the threshold weight
+    for (weight, value) in node.iter().skip(1).zip(values.iter()) {
+        total += weight * value;
+    }
+    total
+}
+
+fn sigmoid(y: f64) -> f64 {
+    1.0 / (1.0 + Float::exp(-y))
 }
 
 fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , weight_updates: &Vec<Vec<Vec<f64>>>) {
