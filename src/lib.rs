@@ -31,7 +31,8 @@ pub enum UpdateRule {
 }
 
 #[derive(Debug)]
-struct Trainer<'a> {
+struct Trainer<'a,'b> {
+    examples: &'b [(&'b Vec<f64>, &'b Vec<f64>)],
     rate: f64,
     momentum: f64,
     log_interval: Option<usize>,
@@ -41,41 +42,41 @@ struct Trainer<'a> {
     nn: &'a mut NN,
 }
 
-impl<'a> Trainer<'a>  {
+impl<'a,'b> Trainer<'a,'b>  {
     
-    fn rate(&mut self, rate: f64) -> &mut Trainer<'a> {
+    fn rate(&mut self, rate: f64) -> &mut Trainer<'a,'b> {
         self.rate = rate;
         self
     }
 
-    fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a> {
+    fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a,'b> {
         self.momentum = momentum;
         self
     }
 
-    fn log_interval(&mut self, log_interval: Option<usize>) -> &mut Trainer<'a> {
+    fn log_interval(&mut self, log_interval: Option<usize>) -> &mut Trainer<'a,'b> {
         self.log_interval = log_interval;
         self
     }
     
-    fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a> {
+    fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a,'b> {
         self.halt_condition = halt_condition;
         self
     }
 
-    fn update_rule(&mut self, update_rule: UpdateRule) -> &mut Trainer<'a> {
+    fn update_rule(&mut self, update_rule: UpdateRule) -> &mut Trainer<'a,'b> {
         self.update_rule = update_rule;
         self
     }
 
-    fn threads(&mut self, threads: usize) -> &mut Trainer<'a> {
+    fn threads(&mut self, threads: usize) -> &mut Trainer<'a,'b> {
         self.threads = threads;
         self
     }
 
-    fn go(&mut self, examples: &[(&Vec<f64>, &Vec<f64>)]) -> Result<usize, &str> {
+    fn go(&mut self) -> Result<usize, &str> {
         self.nn.train_option(
-            examples,
+            self.examples,
             self.rate,
             self.momentum,
             self.log_interval,
@@ -95,8 +96,9 @@ pub struct NN {
 }
 
 impl NN {
-    fn train(&mut self) -> Trainer {
+    fn train<'b>(&'b mut self, examples: &'b [(&'b Vec<f64>, &'b Vec<f64>)]) -> Trainer {
         Trainer {
+            examples: examples,
             rate: DEFAULT_LEARNING_RATE,
             momentum: DEFAULT_MOMENTUM,
             log_interval: None,
