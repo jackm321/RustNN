@@ -13,25 +13,78 @@ type Node = Vec<f64>;
 type Layer = Vec<Node>;
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum HaltCondition {
     Epochs(usize),
     MSE(f64),
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum UpdateRule {
     Stochastic,
     Batch
 }
 
+static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
+static DEFAULT_MOMENTUM: f64 = 0f64;
+static DEFAULT_EPOCHS: usize = 1000;
+
 #[derive(Debug)]
-struct Trainer {
+struct Trainer<'a> {
     rate: f64,
     momentum: f64,
     log_interval: Option<usize>,
     halt_condition: HaltCondition,
     update_rule: UpdateRule,
     threads: usize,
+    nn: &'a mut NN,
+}
+
+impl<'a> Trainer<'a>  {
+    
+    fn rate(&mut self, rate: f64) -> &mut Trainer<'a> {
+        self.rate = rate;
+        self
+    }
+
+    fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a> {
+        self.momentum = momentum;
+        self
+    }
+
+    fn log_interval(&mut self, log_interval: Option<usize>) -> &mut Trainer<'a> {
+        self.log_interval = log_interval;
+        self
+    }
+    
+    fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a> {
+        self.halt_condition = halt_condition;
+        self
+    }
+
+    fn update_rule(&mut self, update_rule: UpdateRule) -> &mut Trainer<'a> {
+        self.update_rule = update_rule;
+        self
+    }
+
+    fn threads(&mut self, threads: usize) -> &mut Trainer<'a> {
+        self.threads = threads;
+        self
+    }
+
+    fn go(&mut self, examples: &[(&Vec<f64>, &Vec<f64>)]) -> Result<usize, &str> {
+        self.nn.train_option(
+            examples,
+            self.rate,
+            self.momentum,
+            self.log_interval,
+            self.halt_condition.clone(),
+            self.update_rule.clone(),
+            self.threads
+        )
+    }
+
 }
 
 #[derive(Debug)]
@@ -42,8 +95,17 @@ pub struct NN {
 }
 
 impl NN {
-    fn train(&self) -> Trainer {
-        unimplemented!()
+    fn train(&mut self) -> Trainer {
+        Trainer {
+            rate: DEFAULT_LEARNING_RATE,
+            momentum: DEFAULT_MOMENTUM,
+            log_interval: None,
+            halt_condition: Epochs(DEFAULT_EPOCHS),
+            update_rule: Stochastic,
+            threads: 1,
+            nn: self
+        }
+        // unimplemented!()
     }
 
     // returns a results with ok being the error rate of the network found at the end and
@@ -100,12 +162,12 @@ impl NN {
         unimplemented!();
     }
 
-    fn run(&self, inputs: &Vec<f64>) -> Vec<f64>{
-        unimplemented!()
+    fn run(&self, inputs: &Vec<f64>) -> Vec<f64> {
+        do_run(self, inputs).pop().unwrap()
     }
 }
 
-fn do_run(nn: &NN, inputs: &Vec<f64>) -> Vec<Vec<f64>>{
+fn do_run(nn: &NN, inputs: &Vec<f64>) -> Vec<Vec<f64>> {
     let mut results = Vec::new();
     results.push(inputs.clone());
     let mut prev_layer_results = inputs;
