@@ -201,10 +201,8 @@ impl NN {
 
     // calculates all weight updates by backpropagation
     fn calculate_weight_updates(&self, results: &Vec<Vec<f64>>, targets: &[f64]) -> Vec<Vec<Vec<f64>>> {
-        let mut network_errors = Vec::new();
+        let mut network_errors:Vec<Vec<f64>> = Vec::new();
         let mut network_weight_updates = Vec::new();
-
-        let mut next_layer_errors: Vec<f64> = Vec::new(); // TODO: find a way to not do this
 
         let layers = &self.layers;
         let network_results = &results[1..]; // skip the input layer
@@ -225,7 +223,7 @@ impl NN {
                     node_error = result * (1f64 - result) * (targets[node_index] - result);
                 } else {
                     let mut sum = 0f64;
-                    for (next_node, &next_node_error_data) in next_layer_nodes.iter().zip(next_layer_errors.iter()) {
+                    for (next_node, &next_node_error_data) in next_layer_nodes.iter().zip((&network_errors[layer_index]).iter()) { // TODO: make sure that layer_index is the correct index, maybe +/-1
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
                     node_error = result * (1f64 - result) * sum;
@@ -246,8 +244,6 @@ impl NN {
                 layer_errors.push(node_error);
                 layer_weight_updates.push(node_weight_updates);
             }
-
-            next_layer_errors = layer_errors.clone();
 
             network_errors.push(layer_errors);
             network_weight_updates.push(layer_weight_updates);
