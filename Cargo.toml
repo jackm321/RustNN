@@ -4,6 +4,7 @@ name = "nn"
 version = "0.0.1"
 authors = ["Jack Montgomery <jackm321@gmail.com>"]
 repository = "https://github.com/jackm321/rust_nn"
+license = "Apache-2.0"
 
 description = """
 A multilayer feedforward backpropagation neural network library
