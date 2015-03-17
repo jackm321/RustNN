@@ -9,10 +9,6 @@ static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
 static DEFAULT_EPOCHS: usize = 1000;
 
-#[test]
-fn it_works() {
-}
-
 type Node = Vec<f64>;
 type Layer = Vec<Node>;
 
@@ -74,7 +70,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         self
     }
 
-    pub fn go(&mut self) -> Result<usize, &str> {
+    pub fn go(&mut self) -> f64 {
         self.nn.train_details(
             self.examples,
             self.rate,
@@ -97,6 +93,9 @@ pub struct NN {
 
 impl NN {
     pub fn run(&self, inputs: &Vec<f64>) -> Vec<f64> {
+        if inputs.len() != self.num_inputs {
+            panic!("input has a different length than the network's input layer");
+        }
         self.do_run(inputs).pop().unwrap()
     }
 
@@ -113,24 +112,53 @@ impl NN {
         }
     }
 
-    // returns a results with ok being the error rate of the network found at the end and
-    // Err is a string with an explaination
     fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
-                    halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> Result<usize, &str> {
+                    halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> f64 {
 
         let mut epochs = 0;
-        let mut error_rate = 0.0;
+        let mut error_rate = 0f64;
+
+        // check that input and output sizes are correct
+        let input_layer_size = self.num_inputs;
+        let output_layer_size = self.layers[self.layers.len() - 1].len();
+        for &(ref inputs, ref outputs) in examples.iter() {
+            if inputs.len() != input_layer_size {
+                panic!("input has a different length than the network's input layer");
+            }
+            if outputs.len() != output_layer_size {
+                panic!("output has a different length than the network's output layer");
+            }
+        }
 
         loop {
 
+            // log error rate if neccessary
+            match log_interval {
+                Some(interval) if epochs>0 && epochs % interval == 0 => {
+                    println!("error rate: {}", error_rate);
+                },
+                _ => (),
+            }
+
+            // check if we've met the halt condition yet
+            match halt_condition {
+                Epochs(epochs_halt) => {
+                    if epochs == epochs_halt { return error_rate }
+                },
+                MSE(target_error) => {
+                    if target_error == error_rate { return error_rate }
+                }
+            }
+
+            error_rate = 0f64;
+
             let mut prev_deltas = self.make_weights_tracker(0.0f64);
             let mut batch_data = self.make_weights_tracker(0.0f64);
-            let mut error_sum: f64 = 0.0;
 
             for &(ref inputs, ref targets) in examples.iter() {
                 let results = self.do_run(&inputs);
                 let weight_updates = self.calculate_weight_updates(&results, &targets);
-                error_sum += calculate_error(&results, &targets);
+                error_rate += calculate_error(&results, &targets);
                 match update_rule {
                     Batch => update_batch_data(&mut batch_data, &weight_updates),
                     Stochastic => self.update_weights(&weight_updates, &mut prev_deltas, rate, momentum),
@@ -144,27 +172,7 @@ impl NN {
             }
 
             epochs += 1;
-
-            // log error rate if neccessary
-            match log_interval {
-                Some(interval) if epochs % interval == 0 => {
-                    println!("error rate: {}", error_rate);
-                },
-                _ => (),
-            }
-
-            // check if we've met the halt condition yet
-            match halt_condition {
-                Epochs(epochs_halt) => {
-                    if epochs == epochs_halt { break; }
-                },
-                MSE(target_error) => {
-                    if target_error == error_rate { break; }
-                }
-            }
         }
-
-        unimplemented!();
     }
 
     fn do_run(&self, inputs: &Vec<f64>) -> Vec<Vec<f64>> {
@@ -206,15 +214,13 @@ impl NN {
         let layers = &self.layers;
         let network_results = &results[1..]; // skip the input layer
 
-        // let mut layer_index = layers.len();
-
-        for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results).rev() { //TODO: just use zip here
-            // layer_index -= 1;
+        let mut next_layer_nodes: Option<&Layer> = None;
+        
+        for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results).rev() {
             let prev_layer_results = &results[layer_index];
             let mut layer_errors = Vec::new();
             let mut layer_weight_updates = Vec::new();
             
-            // let next_layer_nodes: &Layer = &&layers[layer_index+1];
 
             for (node_index, (node, &result)) in iter_zip_enum(layer_nodes, layer_results) {
                 let mut node_weight_updates = Vec::new();
@@ -225,7 +231,7 @@ impl NN {
                     node_error = result * (1f64 - result) * (targets[node_index] - result);
                 } else {
                     let mut sum = 0f64;
-                    for (next_node, &next_node_error_data) in layers[layer_index].iter().zip((&network_errors[layer_index]).iter()) { // TODO: make sure that layer_index is the correct index, maybe +/-1
+                    for (next_node, &next_node_error_data) in next_layer_nodes.unwrap().iter().zip((&network_errors[layer_index]).iter()) {
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
                     node_error = result * (1f64 - result) * sum;
@@ -249,9 +255,10 @@ impl NN {
 
             network_errors.push(layer_errors);
             network_weight_updates.push(layer_weight_updates);
+            next_layer_nodes = Some(&layer_nodes);
         }
 
-        // updates were build by backpropagation so reverse them
+        // updates were built by backpropagation so reverse them
         network_weight_updates.reverse();
 
         network_weight_updates
@@ -276,8 +283,9 @@ impl NN {
 }
 
 fn modified_dotprod(node: &Node, values: &Vec<f64>) -> f64 {
-    let mut total = node[0]; // for the threshold weight
-    for (weight, value) in node.iter().skip(1).zip(values.iter()) {
+    let mut it = node.iter();
+    let mut total = *it.next().unwrap(); // for the threshold weight
+    for (weight, value) in it.zip(values.iter()) {
         total += weight * value;
     }
     total
@@ -303,13 +311,20 @@ fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , network_weight_update
 }
 
 
+// takes two arrays and enumerates the iterator produced by zipping each of
+// their iterators together
 fn iter_zip_enum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
     Enumerate<Zip<slice::Iter<'s, S>, slice::Iter<'t, T>>>  {
     s.iter().zip(t.iter()).enumerate()
 }
 
 fn calculate_error(results: &Vec<Vec<f64>>, targets: &[f64]) -> f64 {
-    unimplemented!()
+    let ref last_resutls = results[results.len()-1];
+    let mut total:f64 = 0f64;
+    for (&result, &target) in last_resutls.iter().zip(targets.iter()) {
+        total += (target - result).powi(2);
+    }
+    0.5 * total
 }
 
 pub fn new(layers_sizes: &[usize]) -> NN {
@@ -326,7 +341,11 @@ pub fn new(layers_sizes: &[usize]) -> NN {
     for &layer_size in it {
         let mut layer: Layer = Vec::new();
         for _ in 0..layer_size {
-            let mut node: Node = vec![rand::random(); prev_layer_size];
+            let mut node: Node = Vec::new();
+            for _ in 0..prev_layer_size+1 {
+                let random_weight: f64 = rand::random();
+                node.push(random_weight);
+            }
             node.shrink_to_fit();
             layer.push(node)
         }
@@ -337,6 +356,3 @@ pub fn new(layers_sizes: &[usize]) -> NN {
     layers.shrink_to_fit();
     NN { layers: layers, num_inputs: first_layer_size }
 }
-
-
-
