@@ -183,7 +183,7 @@ impl NN {
             for node in layer.iter() {
                 layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) )
             }
-            results.push(layer_results.clone());
+            results.push(layer_results);
         }
         results
     }
