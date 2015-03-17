@@ -32,7 +32,7 @@ pub enum UpdateRule {
 
 #[derive(Debug)]
 pub struct Trainer<'a,'b> {
-    examples: &'b [(&'b Vec<f64>, &'b Vec<f64>)],
+    examples: &'b [(Vec<f64>, Vec<f64>)],
     rate: f64,
     momentum: f64,
     log_interval: Option<usize>,
@@ -100,7 +100,7 @@ impl NN {
         self.do_run(inputs).pop().unwrap()
     }
 
-    pub fn train<'b>(&'b mut self, examples: &'b [(&'b Vec<f64>, &'b Vec<f64>)]) -> Trainer {
+    pub fn train<'b>(&'b mut self, examples: &'b [(Vec<f64>, Vec<f64>)]) -> Trainer {
         Trainer {
             examples: examples,
             rate: DEFAULT_LEARNING_RATE,
@@ -115,7 +115,7 @@ impl NN {
 
     // returns a results with ok being the error rate of the network found at the end and
     // Err is a string with an explaination
-    fn train_details(&mut self, examples: &[(&Vec<f64>, &Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
+    fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
                     halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> Result<usize, &str> {
 
         let mut epochs = 0;
@@ -127,10 +127,10 @@ impl NN {
             let mut batch_data = self.make_weights_tracker(0.0f64);
             let mut error_sum: f64 = 0.0;
 
-            for &(inputs, targets) in examples.iter() {
-                let results = self.do_run(inputs);
+            for &(ref inputs, ref targets) in examples.iter() {
+                let results = self.do_run(&inputs);
                 let weight_updates = self.calculate_weight_updates(&results, &targets);
-                error_sum += calculate_error(&results, targets);
+                error_sum += calculate_error(&results, &targets);
                 match update_rule {
                     Batch => update_batch_data(&mut batch_data, &weight_updates),
                     Stochastic => self.update_weights(&weight_updates, &mut prev_deltas, rate, momentum),
@@ -203,16 +203,18 @@ impl NN {
     fn calculate_weight_updates(&self, results: &Vec<Vec<f64>>, targets: &[f64]) -> Vec<Vec<Vec<f64>>> {
         let mut network_errors:Vec<Vec<f64>> = Vec::new();
         let mut network_weight_updates = Vec::new();
-
         let layers = &self.layers;
         let network_results = &results[1..]; // skip the input layer
 
-        for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results) {
+        // let mut layer_index = layers.len();
+
+        for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results).rev() { //TODO: just use zip here
+            // layer_index -= 1;
             let prev_layer_results = &results[layer_index];
             let mut layer_errors = Vec::new();
             let mut layer_weight_updates = Vec::new();
             
-            let next_layer_nodes: &Layer = &&layers[layer_index+1];
+            // let next_layer_nodes: &Layer = &&layers[layer_index+1];
 
             for (node_index, (node, &result)) in iter_zip_enum(layer_nodes, layer_results) {
                 let mut node_weight_updates = Vec::new();
@@ -223,7 +225,7 @@ impl NN {
                     node_error = result * (1f64 - result) * (targets[node_index] - result);
                 } else {
                     let mut sum = 0f64;
-                    for (next_node, &next_node_error_data) in next_layer_nodes.iter().zip((&network_errors[layer_index]).iter()) { // TODO: make sure that layer_index is the correct index, maybe +/-1
+                    for (next_node, &next_node_error_data) in layers[layer_index].iter().zip((&network_errors[layer_index]).iter()) { // TODO: make sure that layer_index is the correct index, maybe +/-1
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
                     node_error = result * (1f64 - result) * sum;
