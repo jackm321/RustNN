@@ -4,6 +4,7 @@ use UpdateRule::{ Stochastic, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
 use std::num::Float;
+use std::thread;
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
@@ -12,15 +13,13 @@ static DEFAULT_EPOCHS: usize = 1000;
 type Node = Vec<f64>;
 type Layer = Vec<Node>;
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum HaltCondition {
     Epochs(usize),
     MSE(f64),
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum UpdateRule {
     Stochastic,
     Batch
@@ -76,16 +75,15 @@ impl<'a,'b> Trainer<'a,'b>  {
             self.rate,
             self.momentum,
             self.log_interval,
-            self.halt_condition.clone(),
-            self.update_rule.clone(),
+            self.halt_condition,
+            self.update_rule,
             self.threads
         )
     }
 
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NN {
     layers: Vec<Layer>,
     num_inputs: usize,
@@ -130,6 +128,8 @@ impl NN {
             }
         }
 
+        let mut prev_deltas = self.make_weights_tracker(0.0f64);
+
         loop {
 
             // log error rate if neccessary
@@ -150,29 +150,72 @@ impl NN {
                 }
             }
 
-            error_rate = 0f64;
-
-            let mut prev_deltas = self.make_weights_tracker(0.0f64);
-            let mut batch_data = self.make_weights_tracker(0.0f64);
-
-            for &(ref inputs, ref targets) in examples.iter() {
-                let results = self.do_run(&inputs);
-                let weight_updates = self.calculate_weight_updates(&results, &targets);
-                error_rate += calculate_error(&results, &targets);
-                match update_rule {
-                    Batch => update_batch_data(&mut batch_data, &weight_updates),
-                    Stochastic => self.update_weights(&weight_updates, &mut prev_deltas, rate, momentum),
-                }
+            if threads > 1 {
+                error_rate = self.train_threaded(examples, rate, momentum, threads, &mut prev_deltas)
+            } else if update_rule == Stochastic {
+                error_rate = self.train_stochastic(examples, rate, momentum, &mut prev_deltas)
+            } else {
+                error_rate = self.train_batch(examples, rate, momentum, &mut prev_deltas)
             }
 
-            // if we're in batch mode, update the weights now
-            match update_rule {
-                Batch => self.update_weights(&batch_data, &mut prev_deltas, rate, momentum),
-                Stochastic => (),
-            }
 
             epochs += 1;
         }
+    }
+
+    fn train_threaded(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64,
+                      threads: usize, prev_deltas: &mut Vec<Vec<Vec<f64>>>) -> f64 {
+        
+        let mut error_rate = 0.0f64;
+
+        // for &(ref inputs, ref targets) in examples.iter() {
+        //     let results = self.do_run(&inputs);
+        //     let weight_updates = self.calculate_weight_updates(&results, &targets);
+        //     error_rate += calculate_error(&results, &targets);
+        //     self.update_weights(&weight_updates, prev_deltas, rate, momentum)
+        // }
+
+        // for i in 0..threads {
+        //     let _ = thread::scoped(move || {
+        //     });
+        // }
+
+        error_rate
+
+    }
+
+    fn train_stochastic(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64,
+                        prev_deltas: &mut Vec<Vec<Vec<f64>>>) -> f64 {
+
+        let mut error_rate = 0.0f64;
+
+        for &(ref inputs, ref targets) in examples.iter() {
+            let results = self.do_run(&inputs);
+            let weight_updates = self.calculate_weight_updates(&results, &targets);
+            error_rate += calculate_error(&results, &targets);
+            self.update_weights(&weight_updates, prev_deltas, rate, momentum)
+        }
+
+        error_rate
+    }
+
+    fn train_batch(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64,
+                   prev_deltas: &mut Vec<Vec<Vec<f64>>>) -> f64 {
+        
+        let mut error_rate = 0.0f64;
+
+        let mut batch_data = self.make_weights_tracker(0.0f64);
+
+        for &(ref inputs, ref targets) in examples.iter() {
+            let results = self.do_run(&inputs);
+            let weight_updates = self.calculate_weight_updates(&results, &targets);
+            error_rate += calculate_error(&results, &targets);
+            update_batch_data(&mut batch_data, &weight_updates);
+        }
+
+        self.update_weights(&batch_data, prev_deltas, rate, momentum);
+
+        error_rate
     }
 
     fn do_run(&self, inputs: &Vec<f64>) -> Vec<Vec<f64>> {
