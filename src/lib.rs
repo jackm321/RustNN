@@ -179,6 +179,21 @@ impl NN {
         let mut epochs = 0;
         let mut training_error_rate = 0.0f64;
 
+        let mut split_examples = Vec::new();
+        {
+            let small_num = examples.len() / threads as usize;
+            let large_num = small_num + 1;
+            let larges = examples.len() % threads as usize;
+            let mut prev_start = 0;
+            for i in 0..threads {
+                let start = prev_start;
+                let end = start + if i < larges as u32 { large_num } else { small_num };
+                prev_start = end;
+                let slc = &examples[start..end];
+                split_examples.push(slc);
+            }
+        }        
+
         let pool = ScopedPool::new(threads);
         let self_lock = Arc::new(RwLock::new(self));
         let (tx, rx) = channel();
@@ -209,25 +224,33 @@ impl NN {
                 self_lock.read().unwrap().make_weights_tracker(0.0f64);
             
             // run each example using the thread pool
-            for &(ref inputs, ref targets) in examples.iter() {
+            for examples in split_examples.iter() {
                 let self_lock = self_lock.clone();
                 let tx = tx.clone();
-                
+
+                let mut local_weight_updates = self_lock.read().unwrap().make_weights_tracker(0.0f64);
+                let mut local_error_rate = 0.0f64;
+
                 pool.execute(move || { 
                     let read_self = self_lock.read().unwrap();
 
-                    let results = read_self.do_run(&inputs);
-                    
-                    let weight_updates =
-                        read_self.calculate_weight_updates(&results, &targets);
-                    let error_rate = calculate_error(&results, &targets);
-                    
-                    tx.send((weight_updates, error_rate)).unwrap();
+                    for &(ref inputs, ref targets) in examples.iter() {
+                        let results = read_self.do_run(&inputs);
+                        let new_weight_updates =
+                            read_self.calculate_weight_updates(&results, &targets);
+                        
+                        let new_error_rate = calculate_error(&results, &targets);
+                        
+                        update_batch_data(&mut local_weight_updates, &new_weight_updates);
+                        local_error_rate += new_error_rate;
+                    }
+
+                    tx.send((local_weight_updates, local_error_rate)).unwrap();
                 });
             }
 
             // collect the results from the thread pool
-            for _ in 0..examples.len() {
+            for _ in 0..threads {
                 let (weight_updates, error_rate) = rx.recv().unwrap();
                 training_error_rate += error_rate;
                 update_batch_data(&mut batch_weight_updates, &weight_updates);
@@ -244,6 +267,7 @@ impl NN {
 
         training_error_rate
     }
+    
 
     fn do_run(&self, inputs: &Vec<f64>) -> Vec<Vec<f64>> {
         let mut results = Vec::new();
