@@ -1,10 +1,15 @@
 extern crate rand;
+extern crate threadpool;
+
 use HaltCondition::{ Epochs, MSE };
 use UpdateRule::{ Stochastic, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
 use std::num::Float;
 use std::thread;
+use threadpool::{ThreadPool, ScopedPool};
+use std::sync::mpsc::channel;
+use std::sync::{Arc, Barrier, RwLock, Mutex};
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
@@ -113,9 +118,6 @@ impl NN {
     fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
                     halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> f64 {
 
-        let mut epochs = 0;
-        let mut error_rate = 0f64;
-
         // check that input and output sizes are correct
         let input_layer_size = self.num_inputs;
         let output_layer_size = self.layers[self.layers.len() - 1].len();
@@ -127,8 +129,21 @@ impl NN {
                 panic!("output has a different length than the network's output layer");
             }
         }
+        
+        if threads > 1 {
+            self.train_details_multi_threaded(examples, rate, momentum, log_interval, halt_condition, update_rule, threads)
+        } else {
+            self.train_details_single_threaded(examples, rate, momentum, log_interval, halt_condition, update_rule, threads)
+        }
 
+    }
+
+    fn train_details_single_threaded(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
+                    halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> f64 {
+        
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
+        let mut epochs = 0;
+        let mut error_rate = 0f64;
 
         loop {
 
@@ -150,38 +165,101 @@ impl NN {
                 }
             }
 
-            if threads > 1 {
-                error_rate = self.train_threaded(examples, rate, momentum, threads, &mut prev_deltas)
-            } else if update_rule == Stochastic {
-                error_rate = self.train_stochastic(examples, rate, momentum, &mut prev_deltas)
-            } else {
-                error_rate = self.train_batch(examples, rate, momentum, &mut prev_deltas)
-            }
-
+            
+            error_rate = match update_rule {
+                Stochastic => self.train_stochastic(examples, rate, momentum, &mut prev_deltas),
+                Batch => self.train_batch(examples, rate, momentum, &mut prev_deltas)
+            };
 
             epochs += 1;
         }
-    }
-
-    fn train_threaded(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64,
-                      threads: usize, prev_deltas: &mut Vec<Vec<Vec<f64>>>) -> f64 {
-        
-        let mut error_rate = 0.0f64;
-
-        // for &(ref inputs, ref targets) in examples.iter() {
-        //     let results = self.do_run(&inputs);
-        //     let weight_updates = self.calculate_weight_updates(&results, &targets);
-        //     error_rate += calculate_error(&results, &targets);
-        //     self.update_weights(&weight_updates, prev_deltas, rate, momentum)
-        // }
-
-        // for i in 0..threads {
-        //     let _ = thread::scoped(move || {
-        //     });
-        // }
 
         error_rate
+    }
 
+    fn train_details_multi_threaded(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
+                    halt_condition: HaltCondition, update_rule: UpdateRule, threads: usize) -> f64 {
+        
+        let mut prev_deltas = Arc::new(Mutex::new(self.make_weights_tracker(0.0f64)));
+        let mut epochs = 0;
+        let mut error_rate = 0f64;
+
+        let mut pool = ScopedPool::new(threads as u32);
+        let self_lock = Arc::new(RwLock::new(self));
+        let (tx, rx) = channel();
+        let mut split_examples = Vec::new();
+        {
+            let small_num = examples.len() / threads;
+            let large_num = small_num + 1;
+            let larges = examples.len() % threads;
+            let mut prev_start = 0;
+            for i in 0..threads {
+                let start = prev_start;
+                let end = if i < larges { large_num } else { small_num };
+                prev_start = end;
+                let slc = &examples[start..end];
+                split_examples.push(slc);
+            }
+        }
+
+        loop {
+
+            // log error rate if neccessary
+            match log_interval {
+                Some(interval) if epochs>0 && epochs % interval == 0 => {
+                    println!("error rate: {}", error_rate);
+                },
+                _ => (),
+            }
+
+            // check if we've met the halt condition yet
+            match halt_condition {
+                Epochs(epochs_halt) => {
+                    if epochs == epochs_halt { return error_rate }
+                },
+                MSE(target_error) => {
+                    if target_error == error_rate { return error_rate }
+                }
+            }
+
+
+            let mut batch_error_rate = 0.0f64;
+            let mut batch_weight_updates = self_lock.read().unwrap().make_weights_tracker(0.0f64);
+            
+            for &examples in split_examples.iter() {
+                let self_lock = self_lock.clone();
+                let prev_deltas = prev_deltas.clone();
+                let tx = tx.clone();
+                pool.execute(move || { 
+                    let mut local_weight_updates = self_lock.read().unwrap().make_weights_tracker(0.0f64);
+                    let mut local_error_rate = 0.0f64;
+                    let read_self = self_lock.read().unwrap();
+
+                    for &(ref inputs, ref targets) in examples.iter() {
+                        let results = read_self.do_run(&inputs);
+                        let new_weight_updates = read_self.calculate_weight_updates(&results, &targets);
+                        update_batch_data(&mut local_weight_updates, &new_weight_updates);
+                        local_error_rate += calculate_error(&results, &targets);
+                    }
+                    
+                    tx.send((local_weight_updates, local_error_rate)).unwrap();
+                });
+            }
+
+            for _ in 0..threads {
+                let (local_weight_updates, local_error_rate) = rx.recv().unwrap();
+                batch_error_rate += local_error_rate;
+                update_batch_data(&mut batch_weight_updates, &local_weight_updates);
+            }
+
+            self_lock.write().unwrap().update_weights(&batch_weight_updates, &mut prev_deltas.lock().unwrap(), rate, momentum);
+
+            error_rate += batch_error_rate;
+
+            epochs += 1;
+        }
+
+        error_rate
     }
 
     fn train_stochastic(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64,
