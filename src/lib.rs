@@ -13,14 +13,11 @@ use std::cmp;
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
-static DEFAULT_EPOCHS: usize = 1000;
-
-type Node = Vec<f64>;
-type Layer = Vec<Node>;
+static DEFAULT_EPOCHS: u32 = 1000;
 
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCondition {
-    Epochs(usize),
+    Epochs(u32),
     MSE(f64),
 }
 
@@ -35,7 +32,7 @@ pub struct Trainer<'a,'b> {
     examples: &'b [(Vec<f64>, Vec<f64>)],
     rate: f64,
     momentum: f64,
-    log_interval: Option<usize>,
+    log_interval: Option<u32>,
     halt_condition: HaltCondition,
     update_rule: UpdateRule,
     nn: &'a mut NN,
@@ -53,7 +50,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         self
     }
 
-    pub fn log_interval(&mut self, log_interval: Option<usize>) -> &mut Trainer<'a,'b> {
+    pub fn log_interval(&mut self, log_interval: Option<u32>) -> &mut Trainer<'a,'b> {
         self.log_interval = log_interval;
         self
     }
@@ -83,13 +80,13 @@ impl<'a,'b> Trainer<'a,'b>  {
 
 #[derive(Debug, Clone)]
 pub struct NN {
-    layers: Vec<Layer>,
-    num_inputs: usize,
+    layers: Vec<Vec<Vec<f64>>>,
+    num_inputs: u32,
 }
 
 impl NN {
     pub fn run(&self, inputs: &Vec<f64>) -> Vec<f64> {
-        if inputs.len() != self.num_inputs {
+        if inputs.len() as u32 != self.num_inputs {
             panic!("input has a different length than the network's input layer");
         }
         self.do_run(inputs).pop().unwrap()
@@ -107,14 +104,14 @@ impl NN {
         }
     }
 
-    fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
+    fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition, update_rule: UpdateRule) -> f64 {
 
         // check that input and output sizes are correct
         let input_layer_size = self.num_inputs;
         let output_layer_size = self.layers[self.layers.len() - 1].len();
         for &(ref inputs, ref outputs) in examples.iter() {
-            if inputs.len() != input_layer_size {
+            if inputs.len() as u32 != input_layer_size {
                 panic!("input has a different length than the network's input layer");
             }
             if outputs.len() != output_layer_size {
@@ -129,11 +126,11 @@ impl NN {
 
     }
 
-    fn train_stochastic(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
+    fn train_stochastic(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition) -> f64 {
         
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
-        let mut epochs = 0;
+        let mut epochs = 0u32;
         let mut training_error_rate = 0f64;
 
         loop {
@@ -156,6 +153,7 @@ impl NN {
                 }
             }
 
+            training_error_rate = 0f64;
             
             for &(ref inputs, ref targets) in examples.iter() {
                 let results = self.do_run(&inputs);
@@ -170,7 +168,7 @@ impl NN {
         training_error_rate
     }
 
-    fn train_batch(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<usize>,
+    fn train_batch(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition, mut threads: u32) -> f64 {
         
         threads = cmp::min(threads, examples.len() as u32);
@@ -218,6 +216,7 @@ impl NN {
                 }
             }
 
+            training_error_rate = 0f64;
 
             // init batch data
             let mut batch_weight_updates =
@@ -308,7 +307,7 @@ impl NN {
         let layers = &self.layers;
         let network_results = &results[1..]; // skip the input layer
 
-        let mut next_layer_nodes: Option<&Layer> = None;
+        let mut next_layer_nodes: Option<&Vec<Vec<f64>>> = None;
         
         for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results).rev() {
             let prev_layer_results = &results[layer_index];
@@ -376,7 +375,7 @@ impl NN {
     }
 }
 
-fn modified_dotprod(node: &Node, values: &Vec<f64>) -> f64 {
+fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
     let mut it = node.iter();
     let mut total = *it.next().unwrap(); // for the threshold weight
     for (weight, value) in it.zip(values.iter()) {
@@ -413,18 +412,26 @@ fn iter_zip_enum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
 }
 
 fn calculate_error(results: &Vec<Vec<f64>>, targets: &[f64]) -> f64 {
-    let ref last_resutls = results[results.len()-1];
+    let ref last_results = results[results.len()-1];
     let mut total:f64 = 0f64;
-    for (&result, &target) in last_resutls.iter().zip(targets.iter()) {
+    for (&result, &target) in last_results.iter().zip(targets.iter()) {
         total += (target - result).powi(2);
     }
-    0.5 * total
+    total / (last_results.len() as f64)
 }
 
-pub fn new(layers_sizes: &[usize]) -> NN {
+pub fn new(layers_sizes: &[u32]) -> NN {
     if layers_sizes.len() < 2 {
         panic!("must have at least two layers");
     }
+
+    for &layer_size in layers_sizes.iter() {
+        if layer_size < 1 {
+            panic!("can't have any empty layers");
+        } 
+    }
+
+
     let mut layers = Vec::new();
     let mut it = layers_sizes.iter();                
     // get the first layer size
@@ -433,9 +440,9 @@ pub fn new(layers_sizes: &[usize]) -> NN {
     // setup the rest of the layers
     let mut prev_layer_size = first_layer_size;
     for &layer_size in it {
-        let mut layer: Layer = Vec::new();
+        let mut layer: Vec<Vec<f64>> = Vec::new();
         for _ in 0..layer_size {
-            let mut node: Node = Vec::new();
+            let mut node: Vec<f64> = Vec::new();
             for _ in 0..prev_layer_size+1 {
                 let random_weight: f64 = rand::random();
                 node.push(random_weight);
