@@ -11,7 +11,7 @@
 //! # XOR example
 //! 
 //! This example creates a new neural network with `2` nodes in the input layer,
-//! a single hidden layer containing `2` nodes, and `1` node in the output layer.
+//! a single hidden layer containing `3` nodes, and `1` node in the output layer.
 //! The network is then trained on examples of the `xor` function. All of the
 //! methods called after `train(&examples)` are optional and are just used
 //! to specify various options that dictate how the network should be trained.
@@ -36,8 +36,8 @@
 //! // create a new neural network by passing an a pointer to an array
 //! // that specifies the number of layers and the number of nodes per layer
 //! // in this case we have an input layer with 2 nodes, one hidden layer
-//! // with 2 nodes and the output layer has 1 node
-//! let mut net = NN::new(&[2, 2, 1]);
+//! // with 3 nodes and the output layer has 1 node
+//! let mut net = NN::new(&[2, 3, 1]);
 //!     
 //! // train the network on the examples of the xor function
 //! // all methods seen here are optional but you must call .go()
@@ -47,7 +47,7 @@
 //!     .learning_mode( LearningMode::Stochastic )
 //!     .log_interval( Some(100) )
 //!     .momentum(0.1)
-//!     .rate(0.25)
+//!     .rate(0.3)
 //!     .go();
 //!     
 //! // evaluate the network to see if it learned the xor function
@@ -117,12 +117,20 @@ impl<'a,'b> Trainer<'a,'b>  {
     /// Specifies the learning rate to be used when training (default is 0.3)
     /// This is the step size that is used in the backpropagation algorithm.
     pub fn rate(&mut self, rate: f64) -> &mut Trainer<'a,'b> {
+        if rate <= 0f64 {
+            panic!("the learning rate must be a positive number");
+        }
+        
         self.rate = rate;
         self
     }
 
     /// Specifies the momentum to be used when training (default is 0.0)
     pub fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a,'b> {
+        if momentum <= 0f64 {
+            panic!("momentum must be positive");
+        }
+        
         self.momentum = momentum;
         self
     }
@@ -130,6 +138,13 @@ impl<'a,'b> Trainer<'a,'b>  {
     /// Specifies how often (measured in batches) to log the current error rate (MSE) during training.
     /// `SOME(x)` means log after every `x` batches and `None` means never log
     pub fn log_interval(&mut self, log_interval: Option<u32>) -> &mut Trainer<'a,'b> {
+        match log_interval {
+            Some(interval) if interval < 1 => {
+                panic!("log interval must be Some positive number or None")
+            }
+            _ => ()
+        }
+        
         self.log_interval = log_interval;
         self
     }
@@ -139,6 +154,16 @@ impl<'a,'b> Trainer<'a,'b>  {
     /// while `MSE(y)` will stop the training when the error rate
     /// is at or below `y`
     pub fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a,'b> {
+        match halt_condition {
+            Epochs(epochs) if epochs < 1 => {
+                panic!("must train for at least one epoch")
+            }
+            MSE(mse) if mse <= 0f64 => {
+                panic!("MSE must be greater than 0")
+            }
+            _ => ()
+        }
+
         self.halt_condition = halt_condition;
         self
     }
@@ -150,6 +175,13 @@ impl<'a,'b> Trainer<'a,'b>  {
     /// parrellized so the `x` in the `Batch(x)` constructor specifies how
     /// many threads to use while training the network.
     pub fn learning_mode(&mut self, learning_mode: LearningMode) -> &mut Trainer<'a,'b> {
+        match learning_mode {
+            Batch(threads) if threads < 1 => {
+                panic!("the number of threads in Batch training mode must be at least 1")
+            }
+            _ => ()
+        }
+
         self.learning_mode = learning_mode;
         self
     }
@@ -478,7 +510,7 @@ impl NN {
                 for weight_index in 0..node.len() {
                     let mut prev_layer_result;
                     if weight_index == 0 {
-                        prev_layer_result = 1f64; // theshold
+                        prev_layer_result = 1f64; // threshold
                     } else {
                         prev_layer_result = prev_layer_results[weight_index-1];
                     }
@@ -532,7 +564,7 @@ impl NN {
 
 fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
     let mut it = node.iter();
-    let mut total = *it.next().unwrap(); // for the threshold weight
+    let mut total = *it.next().unwrap(); // start with the threshold weight
     for (weight, value) in it.zip(values.iter()) {
         total += weight * value;
     }
@@ -566,6 +598,7 @@ fn iter_zip_enum<'s, 't, S: 's, T: 't>(s: &'s [S], t: &'t [T]) ->
     s.iter().zip(t.iter()).enumerate()
 }
 
+// calculates MSE of output layer
 fn calculate_error(results: &Vec<Vec<f64>>, targets: &[f64]) -> f64 {
     let ref last_results = results[results.len()-1];
     let mut total:f64 = 0f64;
