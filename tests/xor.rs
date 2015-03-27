@@ -19,8 +19,7 @@ fn xor_timed() {
     let mut net = NN::new(&[2,3,1]);
     
     // train the network
-    net
-        .train(&examples)
+    net.train(&examples)
         .halt_condition( HaltCondition::Timer(Duration::seconds(10)) )
         .log_interval(None)
         .momentum(0.1)

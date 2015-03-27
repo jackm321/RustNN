@@ -3,14 +3,14 @@ An easy to use neural network library written in Rust.
 
 [Crate](https://crates.io/crates/nn)
   
-[Documentation](https://8a085a002a738b2b88d144f7388abddf95c53b0f.googledrive.com/host/0BxEO4c5CxH8vflM3WW5HYUd1RUFvRlFLWDBvVlRjYk9mb29weDNnZUlvUUFfRm9kVDIxbkU/nn/)
+[Documentation](http://jackm321.github.io/RustNN/doc/nn/)
 
 ## Description
 RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
 library that uses parallelization to quickly learn over large datasets. The library
 generates fully connected multi-layer artificial neural networks that
 are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
-Networks can be trained using a stochastic training mode or they
+Networks can be trained using a incremental training mode or they
 can be trained (optionally in parallel) using a batch training mode.
 
 ## XOR example
@@ -48,7 +48,7 @@ let mut net = NN::new(&[2, 3, 1]);
 // see the documentation for the Trainer struct for more info on what each method does
 net.train(&examples)
     .halt_condition( HaltCondition::Epochs(10000) )
-    .learning_mode( LearningMode::Stochastic )
+    .learning_mode( LearningMode::Incremental )
     .log_interval( Some(100) )
     .momentum(0.1)
     .rate(0.3)

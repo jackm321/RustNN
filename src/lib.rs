@@ -5,7 +5,7 @@
 //! library that uses parallelization to quickly learn over large datasets. The library
 //! generates fully connected multi-layer artificial neural networks that
 //! are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
-//! Networks can be trained using a stochastic training mode or they
+//! Networks can be trained using a incremental training mode or they
 //! can be trained (optionally in parallel) using a batch training mode.
 //! 
 //! # XOR example
@@ -44,7 +44,7 @@
 //! // see the documentation for the Trainer struct for more info on what each method does
 //! net.train(&examples)
 //!     .halt_condition( HaltCondition::Epochs(10000) )
-//!     .learning_mode( LearningMode::Stochastic )
+//!     .learning_mode( LearningMode::Incremental )
 //!     .log_interval( Some(100) )
 //!     .momentum(0.1)
 //!     .rate(0.3)
@@ -66,7 +66,7 @@ extern crate rustc_serialize;
 extern crate time;
 
 use HaltCondition::{ Epochs, MSE, Timer };
-use LearningMode::{ Stochastic, Batch };
+use LearningMode::{ Incremental, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
 use std::num::Float;
@@ -96,8 +96,8 @@ pub enum HaltCondition {
 /// Specifies which [learning mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to use when training the network
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LearningMode {
-    /// train the network stochastically (updates weights after each example)
-    Stochastic,
+    /// train the network Incrementally (updates weights after each example)
+    Incremental,
     /// train the network in batch (updates weights only at then end of each epoch)
     /// batch training can be parallelized and thus the Batch constructor takes a `u32`
     /// that specifies the number of threads to use when training the network
@@ -177,7 +177,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         self
     }
     /// Specifies what [mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to train the network in.
-    /// `Stochastic` means update the weights in the network after every example.
+    /// `Incremental` means update the weights in the network after every example.
     /// `Batch(t)` means run the network on all examples given and accumulate weight
     /// updates along the way but don't actually change the weights in the
     /// network until all of the examples have been run. Batch training can be
@@ -285,7 +285,7 @@ impl NN {
             momentum: DEFAULT_MOMENTUM,
             log_interval: None,
             halt_condition: Epochs(DEFAULT_EPOCHS),
-            learning_mode: Stochastic,
+            learning_mode: Incremental,
             nn: self
         }
     }
@@ -317,13 +317,13 @@ impl NN {
         }
         
         match learning_mode {
-            Stochastic => self.train_stochastic(examples, rate, momentum, log_interval, halt_condition),
+            Incremental => self.train_incremental(examples, rate, momentum, log_interval, halt_condition),
             Batch(threads) => self.train_batch(examples, rate, momentum, log_interval, halt_condition, threads)
         }
 
     }
 
-    fn train_stochastic(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
+    fn train_incremental(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition) -> f64 {
         
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
