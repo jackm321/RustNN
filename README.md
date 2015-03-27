@@ -1,11 +1,12 @@
-# Rust nn
+# RustNN
 An easy to use neural network library written in Rust.
 
-### Documentation:
-### Crate:
+[Crate](https://crates.io/crates/nn)
+  
+[Documentation]()
 
 ## Description
-nn is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
+RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
 library that uses parallelization to quickly learn over large datasets. The library
 generates fully connected multi-layer artificial neural networks that
 are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).

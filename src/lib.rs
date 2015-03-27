@@ -104,7 +104,7 @@ pub enum LearningMode {
     Batch(u32)
 }
 
-/// Used to specify options that dictate how a network will be trained.
+/// Used to specify options that dictate how a network will be trained
 #[derive(Debug)]
 pub struct Trainer<'a,'b> {
     examples: &'b [(Vec<f64>, Vec<f64>)],
@@ -292,12 +292,12 @@ impl NN {
 
     /// Encodes the network as a JSON string.
     pub fn to_json(&self) -> String {
-        json::encode(self).unwrap()
+        json::encode(self).ok().expect("encoding JSON failed")
     }
 
     /// Builds a new network from a JSON string.
     pub fn from_json(encoded: &str) -> NN {
-        let network: NN = json::decode(encoded).unwrap();
+        let network: NN = json::decode(encoded).ok().expect("decoding JSON failed");
         network
     }
 
