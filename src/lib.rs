@@ -58,12 +58,14 @@
 //! }
 //! ```
 
+#![feature(std_misc)]
 
 extern crate rand;
 extern crate threadpool;
 extern crate rustc_serialize;
+extern crate time;
 
-use HaltCondition::{ Epochs, MSE };
+use HaltCondition::{ Epochs, MSE, Timer };
 use LearningMode::{ Stochastic, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
@@ -73,6 +75,8 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, RwLock};
 use std::cmp;
 use rustc_serialize::json;
+use std::time::Duration;
+use time::PreciseTime;
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
@@ -81,8 +85,12 @@ static DEFAULT_EPOCHS: u32 = 1000;
 /// Specifies when to stop training the network
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCondition {
+    /// Stop training after a certain number of epochs
     Epochs(u32),
+    /// Train until a certain error rate is achieved
     MSE(f64),
+    /// Train for some fixed amount of time and then halt
+    Timer(Duration),
 }
 
 /// Specifies which [learning mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to use when training the network
@@ -114,7 +122,7 @@ pub struct Trainer<'a,'b> {
 /// be called however or the network will not be trained.
 impl<'a,'b> Trainer<'a,'b>  {
     
-    /// Specifies the learning rate to be used when training (default is 0.3)
+    /// Specifies the learning rate to be used when training (default is `0.3`)
     /// This is the step size that is used in the backpropagation algorithm.
     pub fn rate(&mut self, rate: f64) -> &mut Trainer<'a,'b> {
         if rate <= 0f64 {
@@ -125,7 +133,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         self
     }
 
-    /// Specifies the momentum to be used when training (default is 0.0)
+    /// Specifies the momentum to be used when training (default is `0.0`)
     pub fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a,'b> {
         if momentum <= 0f64 {
             panic!("momentum must be positive");
@@ -135,7 +143,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         self
     }
 
-    /// Specifies how often (measured in batches) to log the current error rate (MSE) during training.
+    /// Specifies how often (measured in batches) to log the current error rate (mean squared error) during training.
     /// `SOME(x)` means log after every `x` batches and `None` means never log
     pub fn log_interval(&mut self, log_interval: Option<u32>) -> &mut Trainer<'a,'b> {
         match log_interval {
@@ -152,7 +160,8 @@ impl<'a,'b> Trainer<'a,'b>  {
     /// Specifies when to stop training. `Epochs(x)` will stop the training after
     /// `x` epochs (one epoch is one loop through all of the training examples)
     /// while `MSE(y)` will stop the training when the error rate
-    /// is at or below `y`
+    /// is at or below `y`. Timer(duration) will halt after the duration has
+    /// elapsed.
     pub fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a,'b> {
         match halt_condition {
             Epochs(epochs) if epochs < 1 => {
@@ -308,24 +317,31 @@ impl NN {
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
         let mut epochs = 0u32;
         let mut training_error_rate = 0f64;
+        let start_time = PreciseTime::now();
 
         loop {
 
-            // log error rate if neccessary
-            match log_interval {
-                Some(interval) if epochs>0 && epochs % interval == 0 => {
-                    println!("error rate: {}", training_error_rate);
-                },
-                _ => (),
-            }
+            if epochs > 0 {
+                // log error rate if neccessary
+                match log_interval {
+                    Some(interval) if epochs % interval == 0 => {
+                        println!("error rate: {}", training_error_rate);
+                    },
+                    _ => (),
+                }
 
-            // check if we've met the halt condition yet
-            match halt_condition {
-                Epochs(epochs_halt) => {
-                    if epochs == epochs_halt { break }
-                },
-                MSE(target_error) => {
-                    if training_error_rate <= target_error { break }
+                // check if we've met the halt condition yet
+                match halt_condition {
+                    Epochs(epochs_halt) => {
+                        if epochs == epochs_halt { break }
+                    },
+                    MSE(target_error) => {
+                        if training_error_rate <= target_error { break }
+                    },
+                    Timer(duration) => {
+                        let now = PreciseTime::now();
+                        if start_time.to(now) >= duration { break }
+                    }
                 }
             }
 
@@ -371,24 +387,31 @@ impl NN {
         let pool = ScopedPool::new(threads);
         let self_lock = Arc::new(RwLock::new(self));
         let (tx, rx) = channel();
+        let start_time = PreciseTime::now();
 
         loop {
 
-            // log error rate if neccessary
-            match log_interval {
-                Some(interval) if epochs>0 && epochs % interval == 0 => {
-                    println!("error rate: {}", training_error_rate);
-                },
-                _ => (),
-            }
+            if epochs > 0 {
+                // log error rate if neccessary
+                match log_interval {
+                    Some(interval) if epochs % interval == 0 => {
+                        println!("error rate: {}", training_error_rate);
+                    },
+                    _ => (),
+                }
 
-            // check if we've met the halt condition yet
-            match halt_condition {
-                Epochs(epochs_halt) => {
-                    if epochs == epochs_halt { break }
-                },
-                MSE(target_error) => {
-                    if training_error_rate <= target_error { break }
+                // check if we've met the halt condition yet
+                match halt_condition {
+                    Epochs(epochs_halt) => {
+                        if epochs == epochs_halt { break }
+                    },
+                    MSE(target_error) => {
+                        if training_error_rate <= target_error { break }
+                    },
+                    Timer(duration) => {
+                        let now = PreciseTime::now();
+                        if start_time.to(now) >= duration { break }
+                    }
                 }
             }
 
