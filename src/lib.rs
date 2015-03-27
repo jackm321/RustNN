@@ -1,9 +1,70 @@
+//! An easy to use neural network library written in Rust.
+//!
+//! # Description
+//! NN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
+//! library that parrallelization to quickly training over large datasets. The library
+//! generates fully connected multi-layer artificial neural networks that
+//! are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
+//! Networks can be trained sequentially using a stochastic training method or they
+//! can be trained in parralell using a batch training method.
+//! 
+//! # XOR example
+//! 
+//! This example creates a new neural network with `2` nodes in the input layer,
+//! a single hidden layer containing `2` nodes, and `1` node in the output layer.
+//! The network is then trained on examples of the `xor` function. All of the
+//! methods called after `train(&examples)` are optional and are just used
+//! to specify various options that dictate how the network should be trained.
+//! When the `go()` method is called the network will begin training on the
+//! given examples. See the documentation for the `NN` and `Trainer` structs
+//! for more details.
+//! 
+//! ```rust
+//! # use std::num::Float;
+//! use nn::{NN, HaltCondition, LearningMode};
+//! 
+//! // create examples of the xor function
+//! // the network is trained on tuples of vectors where the first vector
+//! // is the inputs and the second vector is the expected outputs
+//! let examples = [
+//!     (vec![0f64, 0f64], vec![0f64]),
+//!     (vec![0f64, 1f64], vec![1f64]),
+//!     (vec![1f64, 0f64], vec![1f64]),
+//!     (vec![1f64, 1f64], vec![0f64]),
+//! ];
+//! 
+//! // create a new neural network by passing an a pointer to an array
+//! // that specifies the number of layers and the number of nodes per layer
+//! // in this case we have an input layer with 2 nodes, one hidden layer
+//! // with 2 nodes and the output layer has 1 node
+//! let mut net = NN::new(&[2, 2, 1]);
+//!     
+//! // train the network on the examples of the xor function
+//! // all methods seen here are optional but you must call .go()
+//! // see the method docs for more info on what each method does
+//! net.train(&examples)
+//!     .halt_condition( HaltCondition::Epochs(10000) )
+//!     .learning_mode( LearningMode::Stochastic )
+//!     .log_interval( Some(100) )
+//!     .momentum(0.1)
+//!     .rate(0.25)
+//!     .go();
+//!     
+//! // evaluate the network to see if it learned the xor function
+//! for &(ref inputs, ref outputs) in examples.iter() {
+//!     let results = net.run(inputs);
+//!     let (result, key) = (Float::round(results[0]), outputs[0]);
+//!     assert!(result == key);
+//! }
+//! ```
+
+
 extern crate rand;
 extern crate threadpool;
 extern crate rustc_serialize;
 
 use HaltCondition::{ Epochs, MSE };
-use UpdateRule::{ Stochastic, Batch };
+use LearningMode::{ Stochastic, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
 use std::num::Float;
@@ -17,18 +78,25 @@ static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
 static DEFAULT_EPOCHS: u32 = 1000;
 
+/// Specifies when to stop training the network
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCondition {
     Epochs(u32),
     MSE(f64),
 }
 
+/// Specifies which [learning mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to use when training the network
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum UpdateRule {
+pub enum LearningMode {
+    /// train the network stochastically (updates weights after each example)
     Stochastic,
+    /// train the network in batch (updates weights only at then end of each epoch)
+    /// batch training can be parrallelized and thus the Batch constructor takes a `u32`
+    /// that specifies the number of threads to use when training the network
     Batch(u32)
 }
 
+/// Used to specify options that dictate how a network will be trained.
 #[derive(Debug)]
 pub struct Trainer<'a,'b> {
     examples: &'b [(Vec<f64>, Vec<f64>)],
@@ -36,37 +104,59 @@ pub struct Trainer<'a,'b> {
     momentum: f64,
     log_interval: Option<u32>,
     halt_condition: HaltCondition,
-    update_rule: UpdateRule,
+    learning_mode: LearningMode,
     nn: &'a mut NN,
 }
 
+/// `Trainer` is used to chain together options that specify how to train a network.
+/// All of the options are optional because the `Trainer` struct
+/// has default values built in for each option. The `go()` method must
+/// be called however or the network will not be trained.
 impl<'a,'b> Trainer<'a,'b>  {
     
+    /// Specifies the learning rate to be used when training (default is 0.3)
+    /// This is the step size that is used in the backpropagation algorithm.
     pub fn rate(&mut self, rate: f64) -> &mut Trainer<'a,'b> {
         self.rate = rate;
         self
     }
 
+    /// Specifies the momentum to be used when training (default is 0.0)
     pub fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a,'b> {
         self.momentum = momentum;
         self
     }
 
+    /// Specifies how often (measured in batches) to log the current error rate (MSE) during training.
+    /// `SOME(x)` means log after every `x` batches and `None` means never log
     pub fn log_interval(&mut self, log_interval: Option<u32>) -> &mut Trainer<'a,'b> {
         self.log_interval = log_interval;
         self
     }
     
+    /// Specifies when to stop training. `Epochs(x)` will stop the training after
+    /// `x` epochs (one epoch is one loop through all of the training examples)
+    /// while `MSE(y)` will stop the training when the error rate
+    /// is at or below `y`
     pub fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a,'b> {
         self.halt_condition = halt_condition;
         self
     }
-
-    pub fn update_rule(&mut self, update_rule: UpdateRule) -> &mut Trainer<'a,'b> {
-        self.update_rule = update_rule;
+    /// Specifies what [mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to train the network in.
+    /// `Stochastic` means update the weights in the network after every example.
+    /// `Batch(x)` means run the network on all examples given and accumulate weight
+    /// updates along the way but don't actually apply change the weights in the
+    /// network until all of the examples have been run. Batch training can be
+    /// parrellized so the `x` in the `Batch(x)` constructor specifies how
+    /// many threads to use while training the network.
+    pub fn learning_mode(&mut self, learning_mode: LearningMode) -> &mut Trainer<'a,'b> {
+        self.learning_mode = learning_mode;
         self
     }
 
+    /// When go is called, the network will begin training based on the
+    /// options specified. If go does not get called, the network will not
+    /// get trained!
     pub fn go(&mut self) -> f64 {
         self.nn.train_details(
             self.examples,
@@ -74,12 +164,13 @@ impl<'a,'b> Trainer<'a,'b>  {
             self.momentum,
             self.log_interval,
             self.halt_condition,
-            self.update_rule,
+            self.learning_mode,
         )
     }
 
 }
 
+/// Neural network
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct NN {
     layers: Vec<Vec<Vec<f64>>>,
@@ -88,6 +179,11 @@ pub struct NN {
 
 impl NN {
 
+    /// each number in the `layers_sizes` parameter specifies a
+    /// layer in the network. The number itself is the number of nodes in that
+    /// layer. The first number is the input layer, the last
+    /// number is the output layer, and all numbers inbetween the first and
+    /// last are hidden layers
     pub fn new(layers_sizes: &[u32]) -> NN {
         if layers_sizes.len() < 2 {
             panic!("must have at least two layers");
@@ -126,6 +222,9 @@ impl NN {
         NN { layers: layers, num_inputs: first_layer_size }
     }
 
+    /// Runs the network on an input and returns a vector of the outputs from
+    /// the network. The number of `f64`s in the input must be the same
+    /// as the number of input nodes in the network.
     pub fn run(&self, inputs: &[f64]) -> Vec<f64> {
         if inputs.len() as u32 != self.num_inputs {
             panic!("input has a different length than the network's input layer");
@@ -133,6 +232,10 @@ impl NN {
         self.do_run(inputs).pop().unwrap()
     }
 
+    /// Takes in vector of examples and returns a `Trainer` struct that is used
+    /// to specify options that dictate how the training should be run.
+    /// No actual training will occur until the `.go()` method on the
+    /// `Trainer` struct is called.
     pub fn train<'b>(&'b mut self, examples: &'b [(Vec<f64>, Vec<f64>)]) -> Trainer {
         Trainer {
             examples: examples,
@@ -140,13 +243,13 @@ impl NN {
             momentum: DEFAULT_MOMENTUM,
             log_interval: None,
             halt_condition: Epochs(DEFAULT_EPOCHS),
-            update_rule: Stochastic,
+            learning_mode: Stochastic,
             nn: self
         }
     }
 
     fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
-                    halt_condition: HaltCondition, update_rule: UpdateRule) -> f64 {
+                    halt_condition: HaltCondition, learning_mode: LearningMode) -> f64 {
 
         // check that input and output sizes are correct
         let input_layer_size = self.num_inputs;
@@ -160,7 +263,7 @@ impl NN {
             }
         }
         
-        match update_rule {
+        match learning_mode {
             Stochastic => self.train_stochastic(examples, rate, momentum, log_interval, halt_condition),
             Batch(threads) => self.train_batch(examples, rate, momentum, log_interval, halt_condition, threads)
         }
@@ -415,10 +518,12 @@ impl NN {
         network_level
     }
 
+    /// encodes the network as a JSON string
     pub fn to_json(&self) -> String {
         json::encode(self).unwrap()
     }
 
+    /// builds a new network from a JSON string
     pub fn from_json(encoded: &str) -> NN {
         let network: NN = json::decode(encoded).unwrap();
         network
@@ -438,7 +543,7 @@ fn sigmoid(y: f64) -> f64 {
     1f64 / (1f64 + Float::exp(-y))
 }
 
-// adds new network weight updates into the update updates already collected
+// adds new network weight updates into the updates already collected
 fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , network_weight_updates: &Vec<Vec<Vec<f64>>>) {
     for layer_index in 0..batch_data.len() {
         let mut batch_layer = &mut batch_data[layer_index];
