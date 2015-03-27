@@ -1,5 +1,6 @@
 extern crate rand;
 extern crate threadpool;
+extern crate rustc_serialize;
 
 use HaltCondition::{ Epochs, MSE };
 use UpdateRule::{ Stochastic, Batch };
@@ -10,6 +11,7 @@ use threadpool::{ScopedPool};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, RwLock};
 use std::cmp;
+use rustc_serialize::json;
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
@@ -78,14 +80,53 @@ impl<'a,'b> Trainer<'a,'b>  {
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct NN {
     layers: Vec<Vec<Vec<f64>>>,
     num_inputs: u32,
 }
 
 impl NN {
-    pub fn run(&self, inputs: &Vec<f64>) -> Vec<f64> {
+
+    pub fn new(layers_sizes: &[u32]) -> NN {
+        if layers_sizes.len() < 2 {
+            panic!("must have at least two layers");
+        }
+
+        for &layer_size in layers_sizes.iter() {
+            if layer_size < 1 {
+                panic!("can't have any empty layers");
+            } 
+        }
+
+
+        let mut layers = Vec::new();
+        let mut it = layers_sizes.iter();                
+        // get the first layer size
+        let first_layer_size = *it.next().unwrap();
+        
+        // setup the rest of the layers
+        let mut prev_layer_size = first_layer_size;
+        for &layer_size in it {
+            let mut layer: Vec<Vec<f64>> = Vec::new();
+            for _ in 0..layer_size {
+                let mut node: Vec<f64> = Vec::new();
+                for _ in 0..prev_layer_size+1 {
+                    let random_weight: f64 = rand::random() - 0.5;
+                    node.push(random_weight);
+                }
+                node.shrink_to_fit();
+                layer.push(node)
+            }
+            layer.shrink_to_fit();
+            layers.push(layer);
+            prev_layer_size = layer_size;
+        }
+        layers.shrink_to_fit();
+        NN { layers: layers, num_inputs: first_layer_size }
+    }
+
+    pub fn run(&self, inputs: &[f64]) -> Vec<f64> {
         if inputs.len() as u32 != self.num_inputs {
             panic!("input has a different length than the network's input layer");
         }
@@ -268,9 +309,9 @@ impl NN {
     }
     
 
-    fn do_run(&self, inputs: &Vec<f64>) -> Vec<Vec<f64>> {
+    fn do_run(&self, inputs: &[f64]) -> Vec<Vec<f64>> {
         let mut results = Vec::new();
-        results.push(inputs.clone());
+        results.push(inputs.to_vec());
         for (layer_index, layer) in self.layers.iter().enumerate() {
             let mut layer_results = Vec::new();
             for node in layer.iter() {
@@ -373,6 +414,15 @@ impl NN {
         
         network_level
     }
+
+    pub fn to_json(&self) -> String {
+        json::encode(self).unwrap()
+    }
+
+    pub fn from_json(encoded: &str) -> NN {
+        let network: NN = json::decode(encoded).unwrap();
+        network
+    }
 }
 
 fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
@@ -418,42 +468,4 @@ fn calculate_error(results: &Vec<Vec<f64>>, targets: &[f64]) -> f64 {
         total += (target - result).powi(2);
     }
     total / (last_results.len() as f64)
-}
-
-pub fn new(layers_sizes: &[u32]) -> NN {
-    if layers_sizes.len() < 2 {
-        panic!("must have at least two layers");
-    }
-
-    for &layer_size in layers_sizes.iter() {
-        if layer_size < 1 {
-            panic!("can't have any empty layers");
-        } 
-    }
-
-
-    let mut layers = Vec::new();
-    let mut it = layers_sizes.iter();                
-    // get the first layer size
-    let first_layer_size = *it.next().unwrap();
-    
-    // setup the rest of the layers
-    let mut prev_layer_size = first_layer_size;
-    for &layer_size in it {
-        let mut layer: Vec<Vec<f64>> = Vec::new();
-        for _ in 0..layer_size {
-            let mut node: Vec<f64> = Vec::new();
-            for _ in 0..prev_layer_size+1 {
-                let random_weight: f64 = rand::random();
-                node.push(random_weight);
-            }
-            node.shrink_to_fit();
-            layer.push(node)
-        }
-        layer.shrink_to_fit();
-        layers.push(layer);
-        prev_layer_size = layer_size;
-    }
-    layers.shrink_to_fit();
-    NN { layers: layers, num_inputs: first_layer_size }
 }

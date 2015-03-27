@@ -14,5 +14,6 @@ keywords = ["nn", "ann", "neural", "backpropagation", "neural network",
             "artificial neural network"]
 
 [dependencies]
-rand = "0.2.0"
+rand = "0.3.3"
 threadpool = "0.1.1"
+rustc-serialize = "0.3.7"
