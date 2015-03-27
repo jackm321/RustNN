@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `nn` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, nn">
+
+    <title>nn - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'nn', ty: 'mod', relpath: '../'};</script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>nn</a><wbr></span><span class='out-of-band'><a href='stability.html'>[stability]</a> <span id='render-detail'>
+            <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
+        </span><a id='src-0' href='../src/nn/lib.rs.html#1-633'>[src]</a></span></h1>
+<div class='docblock'><p>An easy to use neural network library written in Rust.</p>
+
+<h1 id="description" class='section-header'><a
+                           href="#description">Description</a></h1>
+<p>nn is a <a href="http://en.wikipedia.org/wiki/Feedforward_neural_network">feedforward neural network </a>
+library that uses parallelization to quickly learn over large datasets. The library
+generates fully connected multi-layer artificial neural networks that
+are trained via <a href="http://en.wikipedia.org/wiki/Backpropagation">backpropagation</a>.
+Networks can be trained using a stochastic training mode or they
+can be trained (optionally in parallel) using a batch training mode.</p>
+
+<h1 id="xor-example" class='section-header'><a
+                           href="#xor-example">XOR example</a></h1>
+<p>This example creates a neural network with <code>2</code> nodes in the input layer,
+a single hidden layer containing <code>3</code> nodes, and <code>1</code> node in the output layer.
+The network is then trained on examples of the <code>XOR</code> function. All of the
+methods called after <code>train(&amp;examples)</code> are optional and are just used
+to specify various options that dictate how the network should be trained.
+When the <code>go()</code> method is called the network will begin training on the
+given examples. See the documentation for the <code>NN</code> and <code>Trainer</code> structs
+for more details.</p>
+<pre id='rust-example-rendered' class='rust '>
+<span class='kw'>use</span> <span class='ident'>nn</span>::{<span class='ident'>NN</span>, <span class='ident'>HaltCondition</span>, <span class='ident'>LearningMode</span>};
+ 
+<span class='comment'>// create examples of the XOR function</span>
+<span class='comment'>// the network is trained on tuples of vectors where the first vector</span>
+<span class='comment'>// is the inputs and the second vector is the expected outputs</span>
+<span class='kw'>let</span> <span class='ident'>examples</span> <span class='op'>=</span> [
+    (<span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>0f64</span>, <span class='number'>0f64</span>], <span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>0f64</span>]),
+    (<span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>0f64</span>, <span class='number'>1f64</span>], <span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>1f64</span>]),
+    (<span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>1f64</span>, <span class='number'>0f64</span>], <span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>1f64</span>]),
+    (<span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>1f64</span>, <span class='number'>1f64</span>], <span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>0f64</span>]),
+];
+ 
+<span class='comment'>// create a new neural network by passing a pointer to an array</span>
+<span class='comment'>// that specifies the number of layers and the number of nodes in each layer</span>
+<span class='comment'>// in this case we have an input layer with 2 nodes, one hidden layer</span>
+<span class='comment'>// with 3 nodes and the output layer has 1 node</span>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>net</span> <span class='op'>=</span> <span class='ident'>NN</span>::<span class='ident'>new</span>(<span class='kw-2'>&amp;</span>[<span class='number'>2</span>, <span class='number'>3</span>, <span class='number'>1</span>]);
+     
+<span class='comment'>// train the network on the examples of the XOR function</span>
+<span class='comment'>// all methods seen here are optional except go() which must be called to begin training</span>
+<span class='comment'>// see the documentation for the Trainer struct for more info on what each method does</span>
+<span class='ident'>net</span>.<span class='ident'>train</span>(<span class='kw-2'>&amp;</span><span class='ident'>examples</span>)
+    .<span class='ident'>halt_condition</span>( <span class='ident'>HaltCondition</span>::<span class='ident'>Epochs</span>(<span class='number'>10000</span>) )
+    .<span class='ident'>learning_mode</span>( <span class='ident'>LearningMode</span>::<span class='ident'>Stochastic</span> )
+    .<span class='ident'>log_interval</span>( <span class='prelude-val'>Some</span>(<span class='number'>100</span>) )
+    .<span class='ident'>momentum</span>(<span class='number'>0.1</span>)
+    .<span class='ident'>rate</span>(<span class='number'>0.3</span>)
+    .<span class='ident'>go</span>();
+     
+<span class='comment'>// evaluate the network to see if it learned the XOR function</span>
+<span class='kw'>for</span> <span class='kw-2'>&amp;</span>(<span class='kw-2'>ref</span> <span class='ident'>inputs</span>, <span class='kw-2'>ref</span> <span class='ident'>outputs</span>) <span class='kw'>in</span> <span class='ident'>examples</span>.<span class='ident'>iter</span>() {
+    <span class='kw'>let</span> <span class='ident'>results</span> <span class='op'>=</span> <span class='ident'>net</span>.<span class='ident'>run</span>(<span class='ident'>inputs</span>);
+    <span class='kw'>let</span> (<span class='ident'>result</span>, <span class='ident'>key</span>) <span class='op'>=</span> (<span class='ident'>Float</span>::<span class='ident'>round</span>(<span class='ident'>results</span>[<span class='number'>0</span>]), <span class='ident'>outputs</span>[<span class='number'>0</span>]);
+    <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>result</span> <span class='op'>==</span> <span class='ident'>key</span>);
+}
+</pre>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr>
+                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.NN.html'
+                               title='nn::NN'>NN</a></td>
+                        <td class='docblock short'><p>Neural network</p>
+</td>
+                    </tr>
+                
+                    <tr>
+                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.Trainer.html'
+                               title='nn::Trainer'>Trainer</a></td>
+                        <td class='docblock short'><p>Used to specify options that dictate how a network will be trained.</p>
+</td>
+                    </tr>
+                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                    <tr>
+                        <td><a class='stability Unmarked' title='No stability level'></a><a class='enum' href='enum.HaltCondition.html'
+                               title='nn::HaltCondition'>HaltCondition</a></td>
+                        <td class='docblock short'><p>Specifies when to stop training the network</p>
+</td>
+                    </tr>
+                
+                    <tr>
+                        <td><a class='stability Unmarked' title='No stability level'></a><a class='enum' href='enum.LearningMode.html'
+                               title='nn::LearningMode'>LearningMode</a></td>
+                        <td class='docblock short'><p>Specifies which <a href="http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning">learning mode</a> to use when training the network</p>
+</td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "nn";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>

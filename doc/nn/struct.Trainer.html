@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Trainer` struct in crate `nn`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Trainer">
+
+    <title>nn::Trainer - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='index.html'>nn</a></p><script>window.sidebarCurrent = {name: 'Trainer', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>nn</a>::<wbr><a class='struct' href=''>Trainer</a><wbr></span><span class='out-of-band'><span id='render-detail'>
+            <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
+        </span><a id='src-381' href='../src/nn/lib.rs.html#109-117'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Trainer&lt;'a, 'b&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Used to specify options that dictate how a network will be trained.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a, 'b&gt; <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h3><div class='docblock'><p><code>Trainer</code> is used to chain together options that specify how to train a network.
+All of the options are optional because the <code>Trainer</code> struct
+has default values built in for each option. The <code>go()</code> method must
+be called however or the network will not be trained.</p>
+</div><div class='impl-items'><h4 id='method.rate' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.rate' class='fnname'>rate</a>(&amp;mut self, rate: <a href='http://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
+<div class='docblock'><p>Specifies the learning rate to be used when training (default is <code>0.3</code>)
+This is the step size that is used in the backpropagation algorithm.</p>
+</div><h4 id='method.momentum' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.momentum' class='fnname'>momentum</a>(&amp;mut self, momentum: <a href='http://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
+<div class='docblock'><p>Specifies the momentum to be used when training (default is <code>0.0</code>)</p>
+</div><h4 id='method.log_interval' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.log_interval' class='fnname'>log_interval</a>(&amp;mut self, log_interval: <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>&gt;) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
+<div class='docblock'><p>Specifies how often (measured in batches) to log the current error rate (mean squared error) during training.
+<code>Some(x)</code> means log after every <code>x</code> batches and <code>None</code> means never log</p>
+</div><h4 id='method.halt_condition' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.halt_condition' class='fnname'>halt_condition</a>(&amp;mut self, halt_condition: <a class='enum' href='../nn/enum.HaltCondition.html' title='nn::HaltCondition'>HaltCondition</a>) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
+<div class='docblock'><p>Specifies when to stop training. <code>Epochs(x)</code> will stop the training after
+<code>x</code> epochs (one epoch is one loop through all of the training examples)
+while <code>MSE(e)</code> will stop the training when the error rate
+is at or below <code>e</code>. <code>Timer(d)</code> will halt after the <a href="https://doc.rust-lang.org/std/time/duration/struct.Duration.html">duration</a> <code>d</code> has
+elapsed.</p>
+</div><h4 id='method.learning_mode' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.learning_mode' class='fnname'>learning_mode</a>(&amp;mut self, learning_mode: <a class='enum' href='../nn/enum.LearningMode.html' title='nn::LearningMode'>LearningMode</a>) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
+<div class='docblock'><p>Specifies what <a href="http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning">mode</a> to train the network in.
+<code>Stochastic</code> means update the weights in the network after every example.
+<code>Batch(t)</code> means run the network on all examples given and accumulate weight
+updates along the way but don&#39;t actually change the weights in the
+network until all of the examples have been run. Batch training can be
+parallelized, so the <code>t</code> in the <code>Batch(t)</code> constructor specifies how
+many threads to use while training the network.</p>
+</div><h4 id='method.go' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.go' class='fnname'>go</a>(&amp;mut self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a></code></h4>
+<div class='docblock'><p>When <code>go</code> is called, the network will begin training based on the
+options specified. If <code>go</code> does not get called, the network will not
+get trained!</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl&lt;'a, 'b&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Stable' title='Stable'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "nn";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>

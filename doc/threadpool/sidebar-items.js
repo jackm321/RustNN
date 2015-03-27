@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ScopedPool","A scoped thread pool used to execute functions in parallel."],["ThreadPool","A thread pool used to execute functions in parallel."]]});
