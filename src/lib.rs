@@ -1,18 +1,18 @@
 //! An easy to use neural network library written in Rust.
 //!
 //! # Description
-//! NN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
-//! library that parrallelization to quickly training over large datasets. The library
+//! nn is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
+//! library that uses parallelization to quickly learn over large datasets. The library
 //! generates fully connected multi-layer artificial neural networks that
 //! are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
-//! Networks can be trained sequentially using a stochastic training method or they
-//! can be trained in parralell using a batch training method.
+//! Networks can be trained using a stochastic training mode or they
+//! can be trained (optionally in parallel) using a batch training mode.
 //! 
 //! # XOR example
 //! 
-//! This example creates a new neural network with `2` nodes in the input layer,
+//! This example creates a neural network with `2` nodes in the input layer,
 //! a single hidden layer containing `3` nodes, and `1` node in the output layer.
-//! The network is then trained on examples of the `xor` function. All of the
+//! The network is then trained on examples of the `XOR` function. All of the
 //! methods called after `train(&examples)` are optional and are just used
 //! to specify various options that dictate how the network should be trained.
 //! When the `go()` method is called the network will begin training on the
@@ -23,7 +23,7 @@
 //! # use std::num::Float;
 //! use nn::{NN, HaltCondition, LearningMode};
 //! 
-//! // create examples of the xor function
+//! // create examples of the XOR function
 //! // the network is trained on tuples of vectors where the first vector
 //! // is the inputs and the second vector is the expected outputs
 //! let examples = [
@@ -33,15 +33,15 @@
 //!     (vec![1f64, 1f64], vec![0f64]),
 //! ];
 //! 
-//! // create a new neural network by passing an a pointer to an array
-//! // that specifies the number of layers and the number of nodes per layer
+//! // create a new neural network by passing a pointer to an array
+//! // that specifies the number of layers and the number of nodes in each layer
 //! // in this case we have an input layer with 2 nodes, one hidden layer
 //! // with 3 nodes and the output layer has 1 node
 //! let mut net = NN::new(&[2, 3, 1]);
 //!     
-//! // train the network on the examples of the xor function
-//! // all methods seen here are optional but you must call .go()
-//! // see the method docs for more info on what each method does
+//! // train the network on the examples of the XOR function
+//! // all methods seen here are optional except go() which must be called to begin training
+//! // see the documentation for the Trainer struct for more info on what each method does
 //! net.train(&examples)
 //!     .halt_condition( HaltCondition::Epochs(10000) )
 //!     .learning_mode( LearningMode::Stochastic )
@@ -50,7 +50,7 @@
 //!     .rate(0.3)
 //!     .go();
 //!     
-//! // evaluate the network to see if it learned the xor function
+//! // evaluate the network to see if it learned the XOR function
 //! for &(ref inputs, ref outputs) in examples.iter() {
 //!     let results = net.run(inputs);
 //!     let (result, key) = (Float::round(results[0]), outputs[0]);
@@ -99,7 +99,7 @@ pub enum LearningMode {
     /// train the network stochastically (updates weights after each example)
     Stochastic,
     /// train the network in batch (updates weights only at then end of each epoch)
-    /// batch training can be parrallelized and thus the Batch constructor takes a `u32`
+    /// batch training can be parallelized and thus the Batch constructor takes a `u32`
     /// that specifies the number of threads to use when training the network
     Batch(u32)
 }
@@ -144,7 +144,7 @@ impl<'a,'b> Trainer<'a,'b>  {
     }
 
     /// Specifies how often (measured in batches) to log the current error rate (mean squared error) during training.
-    /// `SOME(x)` means log after every `x` batches and `None` means never log
+    /// `Some(x)` means log after every `x` batches and `None` means never log
     pub fn log_interval(&mut self, log_interval: Option<u32>) -> &mut Trainer<'a,'b> {
         match log_interval {
             Some(interval) if interval < 1 => {
@@ -159,8 +159,8 @@ impl<'a,'b> Trainer<'a,'b>  {
     
     /// Specifies when to stop training. `Epochs(x)` will stop the training after
     /// `x` epochs (one epoch is one loop through all of the training examples)
-    /// while `MSE(y)` will stop the training when the error rate
-    /// is at or below `y`. Timer(duration) will halt after the duration has
+    /// while `MSE(e)` will stop the training when the error rate
+    /// is at or below `e`. `Timer(d)` will halt after the [duration](https://doc.rust-lang.org/std/time/duration/struct.Duration.html) `d` has
     /// elapsed.
     pub fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a,'b> {
         match halt_condition {
@@ -178,10 +178,10 @@ impl<'a,'b> Trainer<'a,'b>  {
     }
     /// Specifies what [mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to train the network in.
     /// `Stochastic` means update the weights in the network after every example.
-    /// `Batch(x)` means run the network on all examples given and accumulate weight
-    /// updates along the way but don't actually apply change the weights in the
+    /// `Batch(t)` means run the network on all examples given and accumulate weight
+    /// updates along the way but don't actually change the weights in the
     /// network until all of the examples have been run. Batch training can be
-    /// parrellized so the `x` in the `Batch(x)` constructor specifies how
+    /// parallelized, so the `t` in the `Batch(t)` constructor specifies how
     /// many threads to use while training the network.
     pub fn learning_mode(&mut self, learning_mode: LearningMode) -> &mut Trainer<'a,'b> {
         match learning_mode {
@@ -195,8 +195,8 @@ impl<'a,'b> Trainer<'a,'b>  {
         self
     }
 
-    /// When go is called, the network will begin training based on the
-    /// options specified. If go does not get called, the network will not
+    /// When `go` is called, the network will begin training based on the
+    /// options specified. If `go` does not get called, the network will not
     /// get trained!
     pub fn go(&mut self) -> f64 {
         self.nn.train_details(
@@ -220,11 +220,11 @@ pub struct NN {
 
 impl NN {
 
-    /// each number in the `layers_sizes` parameter specifies a
+    /// Each number in the `layers_sizes` parameter specifies a
     /// layer in the network. The number itself is the number of nodes in that
     /// layer. The first number is the input layer, the last
-    /// number is the output layer, and all numbers inbetween the first and
-    /// last are hidden layers
+    /// number is the output layer, and all numbers between the first and
+    /// last are hidden layers. There must be at least two layers in the network.
     pub fn new(layers_sizes: &[u32]) -> NN {
         if layers_sizes.len() < 2 {
             panic!("must have at least two layers");
@@ -263,9 +263,10 @@ impl NN {
         NN { layers: layers, num_inputs: first_layer_size }
     }
 
-    /// Runs the network on an input and returns a vector of the outputs from
-    /// the network. The number of `f64`s in the input must be the same
-    /// as the number of input nodes in the network.
+    /// Runs the network on an input and returns a vector of the results.
+    /// The number of `f64`s in the input must be the same
+    /// as the number of input nodes in the network. The length of the results
+    /// vector will be the number of nodes in the output layer of the network.
     pub fn run(&self, inputs: &[f64]) -> Vec<f64> {
         if inputs.len() as u32 != self.num_inputs {
             panic!("input has a different length than the network's input layer");
@@ -274,8 +275,8 @@ impl NN {
     }
 
     /// Takes in vector of examples and returns a `Trainer` struct that is used
-    /// to specify options that dictate how the training should be run.
-    /// No actual training will occur until the `.go()` method on the
+    /// to specify options that dictate how the training should proceed.
+    /// No actual training will occur until the `go()` method on the
     /// `Trainer` struct is called.
     pub fn train<'b>(&'b mut self, examples: &'b [(Vec<f64>, Vec<f64>)]) -> Trainer {
         Trainer {
@@ -287,6 +288,17 @@ impl NN {
             learning_mode: Stochastic,
             nn: self
         }
+    }
+
+    /// Encodes the network as a JSON string.
+    pub fn to_json(&self) -> String {
+        json::encode(self).unwrap()
+    }
+
+    /// Builds a new network from a JSON string.
+    pub fn from_json(encoded: &str) -> NN {
+        let network: NN = json::decode(encoded).unwrap();
+        network
     }
 
     fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
@@ -322,7 +334,7 @@ impl NN {
         loop {
 
             if epochs > 0 {
-                // log error rate if neccessary
+                // log error rate if necessary
                 match log_interval {
                     Some(interval) if epochs % interval == 0 => {
                         println!("error rate: {}", training_error_rate);
@@ -392,7 +404,7 @@ impl NN {
         loop {
 
             if epochs > 0 {
-                // log error rate if neccessary
+                // log error rate if necessary
                 match log_interval {
                     Some(interval) if epochs % interval == 0 => {
                         println!("error rate: {}", training_error_rate);
@@ -571,17 +583,6 @@ impl NN {
         }
         
         network_level
-    }
-
-    /// encodes the network as a JSON string
-    pub fn to_json(&self) -> String {
-        json::encode(self).unwrap()
-    }
-
-    /// builds a new network from a JSON string
-    pub fn from_json(encoded: &str) -> NN {
-        let network: NN = json::decode(encoded).unwrap();
-        network
     }
 }
 
