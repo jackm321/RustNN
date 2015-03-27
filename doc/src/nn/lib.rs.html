@@ -681,7 +681,7 @@
 <span class='doccomment'>//! library that uses parallelization to quickly learn over large datasets. The library</span>
 <span class='doccomment'>//! generates fully connected multi-layer artificial neural networks that</span>
 <span class='doccomment'>//! are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).</span>
-<span class='doccomment'>//! Networks can be trained using a stochastic training mode or they</span>
+<span class='doccomment'>//! Networks can be trained using a incremental training mode or they</span>
 <span class='doccomment'>//! can be trained (optionally in parallel) using a batch training mode.</span>
 <span class='doccomment'>//! </span>
 <span class='doccomment'>//! # XOR example</span>
@@ -720,7 +720,7 @@
 <span class='doccomment'>//! // see the documentation for the Trainer struct for more info on what each method does</span>
 <span class='doccomment'>//! net.train(&amp;examples)</span>
 <span class='doccomment'>//!     .halt_condition( HaltCondition::Epochs(10000) )</span>
-<span class='doccomment'>//!     .learning_mode( LearningMode::Stochastic )</span>
+<span class='doccomment'>//!     .learning_mode( LearningMode::Incremental )</span>
 <span class='doccomment'>//!     .log_interval( Some(100) )</span>
 <span class='doccomment'>//!     .momentum(0.1)</span>
 <span class='doccomment'>//!     .rate(0.3)</span>
@@ -742,7 +742,7 @@
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>time</span>;
 
 <span class='kw'>use</span> <span class='ident'>HaltCondition</span>::{ <span class='ident'>Epochs</span>, <span class='ident'>MSE</span>, <span class='ident'>Timer</span> };
-<span class='kw'>use</span> <span class='ident'>LearningMode</span>::{ <span class='ident'>Stochastic</span>, <span class='ident'>Batch</span> };
+<span class='kw'>use</span> <span class='ident'>LearningMode</span>::{ <span class='ident'>Incremental</span>, <span class='ident'>Batch</span> };
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>iter</span>::{<span class='ident'>Zip</span>, <span class='ident'>Enumerate</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>slice</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Float</span>;
@@ -772,15 +772,15 @@
 <span class='doccomment'>/// Specifies which [learning mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to use when training the network</span>
 <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>, <span class='ident'>Copy</span>, <span class='ident'>Clone</span>, <span class='ident'>PartialEq</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>LearningMode</span> {
-    <span class='doccomment'>/// train the network stochastically (updates weights after each example)</span>
-    <span class='ident'>Stochastic</span>,
+    <span class='doccomment'>/// train the network Incrementally (updates weights after each example)</span>
+    <span class='ident'>Incremental</span>,
     <span class='doccomment'>/// train the network in batch (updates weights only at then end of each epoch)</span>
     <span class='doccomment'>/// batch training can be parallelized and thus the Batch constructor takes a `u32`</span>
     <span class='doccomment'>/// that specifies the number of threads to use when training the network</span>
     <span class='ident'>Batch</span>(<span class='ident'>u32</span>)
 }
 
-<span class='doccomment'>/// Used to specify options that dictate how a network will be trained.</span>
+<span class='doccomment'>/// Used to specify options that dictate how a network will be trained</span>
 <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Trainer</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>,<span class='lifetime'>&#39;b</span><span class='op'>&gt;</span> {
     <span class='ident'>examples</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;b</span> [(<span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>f64</span><span class='op'>&gt;</span>, <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>f64</span><span class='op'>&gt;</span>)],
@@ -853,7 +853,7 @@
         <span class='self'>self</span>
     }
     <span class='doccomment'>/// Specifies what [mode](http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning) to train the network in.</span>
-    <span class='doccomment'>/// `Stochastic` means update the weights in the network after every example.</span>
+    <span class='doccomment'>/// `Incremental` means update the weights in the network after every example.</span>
     <span class='doccomment'>/// `Batch(t)` means run the network on all examples given and accumulate weight</span>
     <span class='doccomment'>/// updates along the way but don&#39;t actually change the weights in the</span>
     <span class='doccomment'>/// network until all of the examples have been run. Batch training can be</span>
@@ -961,19 +961,19 @@
             <span class='ident'>momentum</span>: <span class='ident'>DEFAULT_MOMENTUM</span>,
             <span class='ident'>log_interval</span>: <span class='prelude-val'>None</span>,
             <span class='ident'>halt_condition</span>: <span class='ident'>Epochs</span>(<span class='ident'>DEFAULT_EPOCHS</span>),
-            <span class='ident'>learning_mode</span>: <span class='ident'>Stochastic</span>,
+            <span class='ident'>learning_mode</span>: <span class='ident'>Incremental</span>,
             <span class='ident'>nn</span>: <span class='self'>self</span>
         }
     }
 
     <span class='doccomment'>/// Encodes the network as a JSON string.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>to_json</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>String</span> {
-        <span class='ident'>json</span>::<span class='ident'>encode</span>(<span class='self'>self</span>).<span class='ident'>unwrap</span>()
+        <span class='ident'>json</span>::<span class='ident'>encode</span>(<span class='self'>self</span>).<span class='ident'>ok</span>().<span class='ident'>expect</span>(<span class='string'>&quot;encoding JSON failed&quot;</span>)
     }
 
     <span class='doccomment'>/// Builds a new network from a JSON string.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>from_json</span>(<span class='ident'>encoded</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>NN</span> {
-        <span class='kw'>let</span> <span class='ident'>network</span>: <span class='ident'>NN</span> <span class='op'>=</span> <span class='ident'>json</span>::<span class='ident'>decode</span>(<span class='ident'>encoded</span>).<span class='ident'>unwrap</span>();
+        <span class='kw'>let</span> <span class='ident'>network</span>: <span class='ident'>NN</span> <span class='op'>=</span> <span class='ident'>json</span>::<span class='ident'>decode</span>(<span class='ident'>encoded</span>).<span class='ident'>ok</span>().<span class='ident'>expect</span>(<span class='string'>&quot;decoding JSON failed&quot;</span>);
         <span class='ident'>network</span>
     }
 
@@ -993,13 +993,13 @@
         }
         
         <span class='kw'>match</span> <span class='ident'>learning_mode</span> {
-            <span class='ident'>Stochastic</span> <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>train_stochastic</span>(<span class='ident'>examples</span>, <span class='ident'>rate</span>, <span class='ident'>momentum</span>, <span class='ident'>log_interval</span>, <span class='ident'>halt_condition</span>),
+            <span class='ident'>Incremental</span> <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>train_incremental</span>(<span class='ident'>examples</span>, <span class='ident'>rate</span>, <span class='ident'>momentum</span>, <span class='ident'>log_interval</span>, <span class='ident'>halt_condition</span>),
             <span class='ident'>Batch</span>(<span class='ident'>threads</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>train_batch</span>(<span class='ident'>examples</span>, <span class='ident'>rate</span>, <span class='ident'>momentum</span>, <span class='ident'>log_interval</span>, <span class='ident'>halt_condition</span>, <span class='ident'>threads</span>)
         }
 
     }
 
-    <span class='kw'>fn</span> <span class='ident'>train_stochastic</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>examples</span>: <span class='kw-2'>&amp;</span>[(<span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>f64</span><span class='op'>&gt;</span>, <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>f64</span><span class='op'>&gt;</span>)], <span class='ident'>rate</span>: <span class='ident'>f64</span>, <span class='ident'>momentum</span>: <span class='ident'>f64</span>, <span class='ident'>log_interval</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>u32</span><span class='op'>&gt;</span>,
+    <span class='kw'>fn</span> <span class='ident'>train_incremental</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>examples</span>: <span class='kw-2'>&amp;</span>[(<span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>f64</span><span class='op'>&gt;</span>, <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>f64</span><span class='op'>&gt;</span>)], <span class='ident'>rate</span>: <span class='ident'>f64</span>, <span class='ident'>momentum</span>: <span class='ident'>f64</span>, <span class='ident'>log_interval</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>u32</span><span class='op'>&gt;</span>,
                     <span class='ident'>halt_condition</span>: <span class='ident'>HaltCondition</span>) <span class='op'>-&gt;</span> <span class='ident'>f64</span> {
         
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>prev_deltas</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>make_weights_tracker</span>(<span class='number'>0.0f64</span>);

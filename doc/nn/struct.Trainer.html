@@ -46,7 +46,7 @@
         </span><a id='src-381' href='../src/nn/lib.rs.html#109-117'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Trainer&lt;'a, 'b&gt; {
     // some fields omitted
-}</pre><div class='docblock'><p>Used to specify options that dictate how a network will be trained.</p>
+}</pre><div class='docblock'><p>Used to specify options that dictate how a network will be trained</p>
 </div><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a, 'b&gt; <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h3><div class='docblock'><p><code>Trainer</code> is used to chain together options that specify how to train a network.
 All of the options are optional because the <code>Trainer</code> struct
 has default values built in for each option. The <code>go()</code> method must
@@ -67,7 +67,7 @@ is at or below <code>e</code>. <code>Timer(d)</code> will halt after the <a href
 elapsed.</p>
 </div><h4 id='method.learning_mode' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.learning_mode' class='fnname'>learning_mode</a>(&amp;mut self, learning_mode: <a class='enum' href='../nn/enum.LearningMode.html' title='nn::LearningMode'>LearningMode</a>) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
 <div class='docblock'><p>Specifies what <a href="http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning">mode</a> to train the network in.
-<code>Stochastic</code> means update the weights in the network after every example.
+<code>Incremental</code> means update the weights in the network after every example.
 <code>Batch(t)</code> means run the network on all examples given and accumulate weight
 updates along the way but don&#39;t actually change the weights in the
 network until all of the examples have been run. Batch training can be
