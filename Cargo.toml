@@ -4,7 +4,7 @@ name = "nn"
 version = "0.1.1"
 authors = ["Jack Montgomery <jackm321@gmail.com>"]
 repository = "https://github.com/jackm321/RustNN"
-documentation = "http://jackm321.github.io/RustNN/doc/nn/"
+documentation = "https://jackm321.github.io/RustNN/doc/nn/"
 license = "Apache-2.0"
 readme = "README.md"
 

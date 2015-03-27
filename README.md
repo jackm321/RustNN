@@ -3,7 +3,7 @@ An easy to use neural network library written in Rust.
 
 [Crate](https://crates.io/crates/nn)
   
-[Documentation](http://jackm321.github.io/RustNN/doc/nn/)
+[Documentation](https://jackm321.github.io/RustNN/doc/nn/)
 
 ## Description
 RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
