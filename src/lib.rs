@@ -5,7 +5,7 @@
 //! library that uses parallelization to quickly learn over large datasets. The library
 //! generates fully connected multi-layer artificial neural networks that
 //! are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
-//! Networks can be trained using a incremental training mode or they
+//! Networks can be trained using an incremental training mode or they
 //! can be trained (optionally in parallel) using a batch training mode.
 //!
 //! # XOR example
