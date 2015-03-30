@@ -58,8 +58,6 @@
 //! }
 //! ```
 
-#![feature(std_misc)]
-
 extern crate rand;
 extern crate threadpool;
 extern crate rustc_serialize;
