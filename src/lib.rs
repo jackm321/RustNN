@@ -7,9 +7,9 @@
 //! are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
 //! Networks can be trained using a incremental training mode or they
 //! can be trained (optionally in parallel) using a batch training mode.
-//! 
+//!
 //! # XOR example
-//! 
+//!
 //! This example creates a neural network with `2` nodes in the input layer,
 //! a single hidden layer containing `3` nodes, and `1` node in the output layer.
 //! The network is then trained on examples of the `XOR` function. All of the
@@ -18,11 +18,11 @@
 //! When the `go()` method is called the network will begin training on the
 //! given examples. See the documentation for the `NN` and `Trainer` structs
 //! for more details.
-//! 
+//!
 //! ```rust
 //! # use std::num::Float;
 //! use nn::{NN, HaltCondition, LearningMode};
-//! 
+//!
 //! // create examples of the XOR function
 //! // the network is trained on tuples of vectors where the first vector
 //! // is the inputs and the second vector is the expected outputs
@@ -32,13 +32,13 @@
 //!     (vec![1f64, 0f64], vec![1f64]),
 //!     (vec![1f64, 1f64], vec![0f64]),
 //! ];
-//! 
+//!
 //! // create a new neural network by passing a pointer to an array
 //! // that specifies the number of layers and the number of nodes in each layer
 //! // in this case we have an input layer with 2 nodes, one hidden layer
 //! // with 3 nodes and the output layer has 1 node
 //! let mut net = NN::new(&[2, 3, 1]);
-//!     
+//!
 //! // train the network on the examples of the XOR function
 //! // all methods seen here are optional except go() which must be called to begin training
 //! // see the documentation for the Trainer struct for more info on what each method does
@@ -49,7 +49,7 @@
 //!     .momentum(0.1)
 //!     .rate(0.3)
 //!     .go();
-//!     
+//!
 //! // evaluate the network to see if it learned the XOR function
 //! for &(ref inputs, ref outputs) in examples.iter() {
 //!     let results = net.run(inputs);
@@ -75,8 +75,7 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, RwLock};
 use std::cmp;
 use rustc_serialize::json;
-use std::time::Duration;
-use time::PreciseTime;
+use time::{ Duration, PreciseTime };
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
@@ -121,14 +120,14 @@ pub struct Trainer<'a,'b> {
 /// has default values built in for each option. The `go()` method must
 /// be called however or the network will not be trained.
 impl<'a,'b> Trainer<'a,'b>  {
-    
+
     /// Specifies the learning rate to be used when training (default is `0.3`)
     /// This is the step size that is used in the backpropagation algorithm.
     pub fn rate(&mut self, rate: f64) -> &mut Trainer<'a,'b> {
         if rate <= 0f64 {
             panic!("the learning rate must be a positive number");
         }
-        
+
         self.rate = rate;
         self
     }
@@ -138,7 +137,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         if momentum <= 0f64 {
             panic!("momentum must be positive");
         }
-        
+
         self.momentum = momentum;
         self
     }
@@ -152,15 +151,15 @@ impl<'a,'b> Trainer<'a,'b>  {
             }
             _ => ()
         }
-        
+
         self.log_interval = log_interval;
         self
     }
-    
+
     /// Specifies when to stop training. `Epochs(x)` will stop the training after
     /// `x` epochs (one epoch is one loop through all of the training examples)
     /// while `MSE(e)` will stop the training when the error rate
-    /// is at or below `e`. `Timer(d)` will halt after the [duration](https://doc.rust-lang.org/std/time/duration/struct.Duration.html) `d` has
+    /// is at or below `e`. `Timer(d)` will halt after the [duration](https://doc.rust-lang.org/time/time/struct.Duration.html) `d` has
     /// elapsed.
     pub fn halt_condition(&mut self, halt_condition: HaltCondition) -> &mut Trainer<'a,'b> {
         match halt_condition {
@@ -233,15 +232,15 @@ impl NN {
         for &layer_size in layers_sizes.iter() {
             if layer_size < 1 {
                 panic!("can't have any empty layers");
-            } 
+            }
         }
 
 
         let mut layers = Vec::new();
-        let mut it = layers_sizes.iter();                
+        let mut it = layers_sizes.iter();
         // get the first layer size
         let first_layer_size = *it.next().unwrap();
-        
+
         // setup the rest of the layers
         let mut prev_layer_size = first_layer_size;
         for &layer_size in it {
@@ -315,7 +314,7 @@ impl NN {
                 panic!("output has a different length than the network's output layer");
             }
         }
-        
+
         match learning_mode {
             Incremental => self.train_incremental(examples, rate, momentum, log_interval, halt_condition),
             Batch(threads) => self.train_batch(examples, rate, momentum, log_interval, halt_condition, threads)
@@ -325,7 +324,7 @@ impl NN {
 
     fn train_incremental(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition) -> f64 {
-        
+
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
         let mut epochs = 0u32;
         let mut training_error_rate = 0f64;
@@ -358,7 +357,7 @@ impl NN {
             }
 
             training_error_rate = 0f64;
-            
+
             for &(ref inputs, ref targets) in examples.iter() {
                 let results = self.do_run(&inputs);
                 let weight_updates = self.calculate_weight_updates(&results, &targets);
@@ -374,7 +373,7 @@ impl NN {
 
     fn train_batch(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition, mut threads: u32) -> f64 {
-        
+
         threads = cmp::min(threads, examples.len() as u32);
 
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
@@ -394,7 +393,7 @@ impl NN {
                 let slc = &examples[start..end];
                 split_examples.push(slc);
             }
-        }        
+        }
 
         let pool = ScopedPool::new(threads);
         let self_lock = Arc::new(RwLock::new(self));
@@ -432,7 +431,7 @@ impl NN {
             // init batch data
             let mut batch_weight_updates =
                 self_lock.read().unwrap().make_weights_tracker(0.0f64);
-            
+
             // run each example using the thread pool
             for examples in split_examples.iter() {
                 let self_lock = self_lock.clone();
@@ -441,16 +440,16 @@ impl NN {
                 let mut local_weight_updates = self_lock.read().unwrap().make_weights_tracker(0.0f64);
                 let mut local_error_rate = 0.0f64;
 
-                pool.execute(move || { 
+                pool.execute(move || {
                     let read_self = self_lock.read().unwrap();
 
                     for &(ref inputs, ref targets) in examples.iter() {
                         let results = read_self.do_run(&inputs);
                         let new_weight_updates =
                             read_self.calculate_weight_updates(&results, &targets);
-                        
+
                         let new_error_rate = calculate_error(&results, &targets);
-                        
+
                         update_batch_data(&mut local_weight_updates, &new_weight_updates);
                         local_error_rate += new_error_rate;
                     }
@@ -477,7 +476,7 @@ impl NN {
 
         training_error_rate
     }
-    
+
 
     fn do_run(&self, inputs: &[f64]) -> Vec<Vec<f64>> {
         let mut results = Vec::new();
@@ -508,7 +507,7 @@ impl NN {
                     prev_deltas[layer_index][node_index][weight_index] = delta;
                 }
             }
-        } 
+        }
     }
 
     // calculates all weight updates by backpropagation
@@ -519,17 +518,17 @@ impl NN {
         let network_results = &results[1..]; // skip the input layer
 
         let mut next_layer_nodes: Option<&Vec<Vec<f64>>> = None;
-        
+
         for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results).rev() {
             let prev_layer_results = &results[layer_index];
             let mut layer_errors = Vec::new();
             let mut layer_weight_updates = Vec::new();
-            
+
 
             for (node_index, (node, &result)) in iter_zip_enum(layer_nodes, layer_results) {
                 let mut node_weight_updates = Vec::new();
                 let mut node_error;
-                
+
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
                     node_error = result * (1f64 - result) * (targets[node_index] - result);
@@ -566,10 +565,10 @@ impl NN {
         network_weight_updates.reverse();
 
         network_weight_updates
-    }    
-    
+    }
+
     fn make_weights_tracker<T: Clone>(&self, place_holder: T) -> Vec<Vec<Vec<T>>> {
-        let mut network_level = Vec::new(); 
+        let mut network_level = Vec::new();
         for layer in self.layers.iter() {
             let mut layer_level = Vec::new();
             for node in layer.iter() {
@@ -581,7 +580,7 @@ impl NN {
             }
             network_level.push(layer_level);
         }
-        
+
         network_level
     }
 }
@@ -611,7 +610,7 @@ fn update_batch_data(batch_data: &mut Vec<Vec<Vec<f64>>> , network_weight_update
                 batch_node[weight_index] += node_weight_updates[weight_index];
             }
         }
-    } 
+    }
 }
 
 
