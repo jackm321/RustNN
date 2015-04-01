@@ -1,7 +1,7 @@
 [package]
 
 name = "nn"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Jack Montgomery <jackm321@gmail.com>"]
 repository = "https://github.com/jackm321/RustNN"
 documentation = "https://jackm321.github.io/RustNN/doc/nn/"
