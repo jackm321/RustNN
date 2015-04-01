@@ -74,6 +74,7 @@ use std::sync::{Arc, RwLock};
 use std::cmp;
 use rustc_serialize::json;
 use time::{ Duration, PreciseTime };
+use rand::Rng;
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
 static DEFAULT_MOMENTUM: f64 = 0f64;
@@ -223,6 +224,8 @@ impl NN {
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
     pub fn new(layers_sizes: &[u32]) -> NN {
+        let mut rng = rand::thread_rng();
+
         if layers_sizes.len() < 2 {
             panic!("must have at least two layers");
         }
@@ -246,7 +249,7 @@ impl NN {
             for _ in 0..layer_size {
                 let mut node: Vec<f64> = Vec::new();
                 for _ in 0..prev_layer_size+1 {
-                    let random_weight: f64 = rand::random() - 0.5;
+                    let random_weight: f64 = rng.gen_range(-0.5f64, 0.5f64);
                     node.push(random_weight);
                 }
                 node.shrink_to_fit();
