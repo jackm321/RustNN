@@ -1,7 +1,7 @@
 [package]
 
 name = "nn"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Jack Montgomery <jackm321@gmail.com>"]
 repository = "https://github.com/jackm321/RustNN"
 documentation = "https://jackm321.github.io/RustNN/doc/nn/"
@@ -16,7 +16,7 @@ keywords = ["nn", "neural-network", "classifier", "backpropagation",
             "machine-learning"]
 
 [dependencies]
-rand = "0.3.4"
+rand = "0.3.5"
 threadpool = "0.1.2"
 rustc-serialize = "0.3.10"
-time = "0.1.22"
+time = "0.1.23"
