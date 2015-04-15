@@ -1,7 +1,6 @@
 extern crate nn;
 extern crate time;
 
-use std::num::Float;
 use nn::{NN, HaltCondition, LearningMode};
 use time::Duration;
 
@@ -33,7 +32,7 @@ fn xor_4layers() {
     // test the trained network
     for &(ref inputs, ref outputs) in examples.iter() {
         let results = net2.run(inputs);
-        let (result, key) = (Float::round(results[0]), outputs[0]);
+        let (result, key) = (results[0].round(), outputs[0]);
         assert!(result == key);
     }
 }
@@ -66,7 +65,7 @@ fn xor_timed() {
     // test the trained network
     for &(ref inputs, ref outputs) in examples.iter() {
         let results = net2.run(inputs);
-        let (result, key) = (Float::round(results[0]), outputs[0]);
+        let (result, key) = (results[0].round(), outputs[0]);
         assert!(result == key);
     }
 }

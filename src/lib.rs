@@ -67,7 +67,6 @@ use HaltCondition::{ Epochs, MSE, Timer };
 use LearningMode::{ Incremental, Batch };
 use std::iter::{Zip, Enumerate};
 use std::slice;
-use std::num::Float;
 use threadpool::{ScopedPool};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, RwLock};
@@ -597,7 +596,7 @@ fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
 }
 
 fn sigmoid(y: f64) -> f64 {
-    1f64 / (1f64 + Float::exp(-y))
+    1f64 / (1f64 + (-y).exp())
 }
 
 // adds new network weight updates into the updates already collected
