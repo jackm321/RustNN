@@ -43,7 +43,7 @@
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>nn</a>::<wbr><a class='struct' href=''>Trainer</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-381' href='../src/nn/lib.rs.html#109-117'>[src]</a></span></h1>
+        </span><a id='src-265' href='../src/nn/lib.rs.html#94-102'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Trainer&lt;'a, 'b&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p>Used to specify options that dictate how a network will be trained</p>
@@ -63,21 +63,16 @@ This is the step size that is used in the backpropagation algorithm.</p>
 <div class='docblock'><p>Specifies when to stop training. <code>Epochs(x)</code> will stop the training after
 <code>x</code> epochs (one epoch is one loop through all of the training examples)
 while <code>MSE(e)</code> will stop the training when the error rate
-is at or below <code>e</code>. <code>Timer(d)</code> will halt after the <a href="https://doc.rust-lang.org/std/time/duration/struct.Duration.html">duration</a> <code>d</code> has
+is at or below <code>e</code>. <code>Timer(d)</code> will halt after the <a href="https://doc.rust-lang.org/time/time/struct.Duration.html">duration</a> <code>d</code> has
 elapsed.</p>
 </div><h4 id='method.learning_mode' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.learning_mode' class='fnname'>learning_mode</a>(&amp;mut self, learning_mode: <a class='enum' href='../nn/enum.LearningMode.html' title='nn::LearningMode'>LearningMode</a>) -&gt; &amp;mut <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h4>
 <div class='docblock'><p>Specifies what <a href="http://en.wikipedia.org/wiki/Backpropagation#Modes_of_learning">mode</a> to train the network in.
-<code>Incremental</code> means update the weights in the network after every example.
-<code>Batch(t)</code> means run the network on all examples given and accumulate weight
-updates along the way but don&#39;t actually change the weights in the
-network until all of the examples have been run. Batch training can be
-parallelized, so the <code>t</code> in the <code>Batch(t)</code> constructor specifies how
-many threads to use while training the network.</p>
+<code>Incremental</code> means update the weights in the network after every example.</p>
 </div><h4 id='method.go' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.go' class='fnname'>go</a>(&amp;mut self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a></code></h4>
 <div class='docblock'><p>When <code>go</code> is called, the network will begin training based on the
 options specified. If <code>go</code> does not get called, the network will not
 get trained!</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl&lt;'a, 'b&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Stable' title='Stable'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl&lt;'a, 'b&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../nn/struct.Trainer.html' title='nn::Trainer'>Trainer</a>&lt;'a, 'b&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Stable' title='Stable'></a><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 

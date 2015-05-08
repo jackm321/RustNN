@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.3/src/chacha.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.8/src/chacha.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>chacha.rs.html -- source</title>
@@ -331,7 +331,6 @@
 <span id="289">289</span>
 <span id="290">290</span>
 <span id="291">291</span>
-<span id="292">292</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2014 The Rust Project Developers. See the COPYRIGHT</span>
 <span class='comment'>// file at the top-level directory of this distribution and at</span>
@@ -345,8 +344,7 @@
 
 <span class='doccomment'>//! The ChaCha random number generator.</span>
 
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Int</span>;
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>wrapping</span>::<span class='ident'>Wrapping</span> <span class='kw'>as</span> <span class='ident'>w</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Wrapping</span> <span class='kw'>as</span> <span class='ident'>w</span>;
 <span class='kw'>use</span> {<span class='ident'>Rng</span>, <span class='ident'>SeedableRng</span>, <span class='ident'>Rand</span>, <span class='ident'>w32</span>};
 
 <span class='kw'>const</span> <span class='ident'>KEY_WORDS</span>    : <span class='ident'>usize</span> <span class='op'>=</span>  <span class='number'>8</span>; <span class='comment'>// 8 words for the 256-bit key</span>
@@ -546,8 +544,8 @@
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
     <span class='kw'>fn</span> <span class='ident'>test_rng_rand_seeded</span>() {
         <span class='kw'>let</span> <span class='ident'>s</span> <span class='op'>=</span> ::<span class='ident'>test</span>::<span class='ident'>rng</span>().<span class='ident'>gen_iter</span>::<span class='op'>&lt;</span><span class='ident'>u32</span><span class='op'>&gt;</span>().<span class='ident'>take</span>(<span class='number'>8</span>).<span class='ident'>collect</span>::<span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u32</span><span class='op'>&gt;&gt;</span>();
-        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra</span>: <span class='ident'>ChaChaRng</span> <span class='op'>=</span> <span class='ident'>SeedableRng</span>::<span class='ident'>from_seed</span>(<span class='ident'>s</span>.<span class='ident'>as_slice</span>());
-        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb</span>: <span class='ident'>ChaChaRng</span> <span class='op'>=</span> <span class='ident'>SeedableRng</span>::<span class='ident'>from_seed</span>(<span class='ident'>s</span>.<span class='ident'>as_slice</span>());
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>ra</span>: <span class='ident'>ChaChaRng</span> <span class='op'>=</span> <span class='ident'>SeedableRng</span>::<span class='ident'>from_seed</span>(<span class='kw-2'>&amp;</span><span class='ident'>s</span>[..]);
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rb</span>: <span class='ident'>ChaChaRng</span> <span class='op'>=</span> <span class='ident'>SeedableRng</span>::<span class='ident'>from_seed</span>(<span class='kw-2'>&amp;</span><span class='ident'>s</span>[..]);
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>order</span>::<span class='ident'>equals</span>(<span class='ident'>ra</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>),
                               <span class='ident'>rb</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>)));
     }
@@ -564,10 +562,10 @@
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
     <span class='kw'>fn</span> <span class='ident'>test_rng_reseed</span>() {
         <span class='kw'>let</span> <span class='ident'>s</span> <span class='op'>=</span> ::<span class='ident'>test</span>::<span class='ident'>rng</span>().<span class='ident'>gen_iter</span>::<span class='op'>&lt;</span><span class='ident'>u32</span><span class='op'>&gt;</span>().<span class='ident'>take</span>(<span class='number'>8</span>).<span class='ident'>collect</span>::<span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u32</span><span class='op'>&gt;&gt;</span>();
-        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>r</span>: <span class='ident'>ChaChaRng</span> <span class='op'>=</span> <span class='ident'>SeedableRng</span>::<span class='ident'>from_seed</span>(<span class='ident'>s</span>.<span class='ident'>as_slice</span>());
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>r</span>: <span class='ident'>ChaChaRng</span> <span class='op'>=</span> <span class='ident'>SeedableRng</span>::<span class='ident'>from_seed</span>(<span class='kw-2'>&amp;</span><span class='ident'>s</span>[..]);
         <span class='kw'>let</span> <span class='ident'>string1</span>: <span class='ident'>String</span> <span class='op'>=</span> <span class='ident'>r</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>).<span class='ident'>collect</span>();
 
-        <span class='ident'>r</span>.<span class='ident'>reseed</span>(<span class='ident'>s</span>.<span class='ident'>as_slice</span>());
+        <span class='ident'>r</span>.<span class='ident'>reseed</span>(<span class='kw-2'>&amp;</span><span class='ident'>s</span>);
 
         <span class='kw'>let</span> <span class='ident'>string2</span>: <span class='ident'>String</span> <span class='op'>=</span> <span class='ident'>r</span>.<span class='ident'>gen_ascii_chars</span>().<span class='ident'>take</span>(<span class='number'>100</span>).<span class='ident'>collect</span>();
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>string1</span>, <span class='ident'>string2</span>);

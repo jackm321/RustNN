@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.3/src/lib.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.8/src/lib.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>lib.rs.html -- source</title>
@@ -1217,7 +1217,6 @@
 <span id="1175">1175</span>
 <span id="1176">1176</span>
 <span id="1177">1177</span>
-<span id="1178">1178</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2013-2014 The Rust Project Developers. See the COPYRIGHT</span>
 <span class='comment'>// file at the top-level directory of this distribution and at</span>
@@ -1445,9 +1444,8 @@
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>doc</span>(<span class='ident'>html_logo_url</span> <span class='op'>=</span> <span class='string'>&quot;http://www.rust-lang.org/logos/rust-logo-128x128-blk.png&quot;</span>,
        <span class='ident'>html_favicon_url</span> <span class='op'>=</span> <span class='string'>&quot;http://www.rust-lang.org/favicon.ico&quot;</span>,
        <span class='ident'>html_root_url</span> <span class='op'>=</span> <span class='string'>&quot;http://doc.rust-lang.org/rand/&quot;</span>)]</span>
-<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>feature</span>(<span class='ident'>core</span>, <span class='ident'>io</span>, <span class='ident'>step_by</span>)]</span>
 
-<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>cfg_attr</span>(<span class='ident'>test</span>, <span class='ident'>feature</span>(<span class='ident'>test</span>))]</span>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>cfg_attr</span>(<span class='ident'>test</span>, <span class='ident'>feature</span>(<span class='ident'>core</span>, <span class='ident'>test</span>))]</span>
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span> <span class='attribute'>#[<span class='ident'>macro_use</span>]</span> <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>log</span>;
 
@@ -1456,7 +1454,7 @@
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>rc</span>::<span class='ident'>Rc</span>;
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>wrapping</span>::<span class='ident'>Wrapping</span> <span class='kw'>as</span> <span class='ident'>w</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Wrapping</span> <span class='kw'>as</span> <span class='ident'>w</span>;
 
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>os</span>::<span class='ident'>OsRng</span>;
 
@@ -2164,7 +2162,7 @@
                        <span class='number'>80</span>, <span class='number'>81</span>, <span class='number'>82</span>, <span class='number'>83</span>, <span class='number'>84</span>, <span class='number'>85</span>, <span class='number'>86</span>, <span class='number'>87</span>];
         <span class='kw'>for</span> <span class='kw-2'>&amp;</span><span class='ident'>n</span> <span class='kw'>in</span> <span class='ident'>lengths</span>.<span class='ident'>iter</span>() {
             <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>v</span> <span class='op'>=</span> <span class='ident'>repeat</span>(<span class='number'>0u8</span>).<span class='ident'>take</span>(<span class='ident'>n</span>).<span class='ident'>collect</span>::<span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span>_<span class='op'>&gt;&gt;</span>();
-            <span class='ident'>r</span>.<span class='ident'>fill_bytes</span>(<span class='ident'>v</span>.<span class='ident'>as_mut_slice</span>());
+            <span class='ident'>r</span>.<span class='ident'>fill_bytes</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>v</span>);
 
             <span class='comment'>// use this to get nicer error messages.</span>
             <span class='kw'>for</span> (<span class='ident'>i</span>, <span class='kw-2'>&amp;</span><span class='ident'>byte</span>) <span class='kw'>in</span> <span class='ident'>v</span>.<span class='ident'>iter</span>().<span class='ident'>enumerate</span>() {

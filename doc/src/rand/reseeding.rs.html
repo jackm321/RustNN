@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.3/src/reseeding.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.8/src/reseeding.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>reseeding.rs.html -- source</title>
@@ -403,7 +403,7 @@
 
 <span class='doccomment'>/// Reseed an RNG using a `Default` instance. This reseeds by</span>
 <span class='doccomment'>/// replacing the RNG with the result of a `Default::default` call.</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>ReseedWithDefault</span>;
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>R</span>: <span class='ident'>Rng</span> <span class='op'>+</span> <span class='ident'>Default</span><span class='op'>&gt;</span> <span class='ident'>Reseeder</span><span class='op'>&lt;</span><span class='ident'>R</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>ReseedWithDefault</span> {
@@ -482,7 +482,7 @@
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
     <span class='kw'>fn</span> <span class='ident'>test_rng_fill_bytes</span>() {
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>v</span> <span class='op'>=</span> <span class='ident'>repeat</span>(<span class='number'>0u8</span>).<span class='ident'>take</span>(<span class='ident'>FILL_BYTES_V_LEN</span>).<span class='ident'>collect</span>::<span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span>_<span class='op'>&gt;&gt;</span>();
-        ::<span class='ident'>test</span>::<span class='ident'>rng</span>().<span class='ident'>fill_bytes</span>(<span class='ident'>v</span>.<span class='ident'>as_mut_slice</span>());
+        ::<span class='ident'>test</span>::<span class='ident'>rng</span>().<span class='ident'>fill_bytes</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>v</span>);
 
         <span class='comment'>// Sanity test: if we&#39;ve gotten here, `fill_bytes` has not infinitely</span>
         <span class='comment'>// recursed.</span>

@@ -43,7 +43,7 @@
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>rustc_serialize</a>::<wbr><a class='mod' href=''>json</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-13634' href='../../src/rustc_serialize/json.rs.html#14-3948'>[src]</a></span></h1>
+        </span><a id='src-13795' href='../../src/rustc_serialize/json.rs.html#14-3958'>[src]</a></span></h1>
 <div class='docblock'><p>JSON parsing and serialization</p>
 
 <h1 id="what-is-json?" class='section-header'><a
@@ -116,7 +116,7 @@ mandatory.</p>
 <p>Create a struct called <code>TestStruct</code> and serialize and deserialize it to and
 from JSON using the serialization API, using the derived serialization code.</p>
 <pre id='rust-example-rendered' class='rust '>
-<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='string'>&quot;rustc-serialize&quot;</span> <span class='kw'>as</span> <span class='ident'>rustc_serialize</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
 <span class='kw'>use</span> <span class='ident'>rustc_serialize</span>::<span class='ident'>json</span>;
 
 <span class='comment'>// Automatically generate `RustcDecodable` and `RustcEncodable` trait</span>
@@ -150,7 +150,7 @@ which is required for custom mappings.</p>
 
 <h3 id="simple-example-of-tojson-usage" class='section-header'><a
                            href="#simple-example-of-tojson-usage">Simple example of <code>ToJson</code> usage</a></h3><pre id='rust-example-rendered' class='rust '>
-<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='string'>&quot;rustc-serialize&quot;</span> <span class='kw'>as</span> <span class='ident'>rustc_serialize</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
 <span class='kw'>use</span> <span class='ident'>rustc_serialize</span>::<span class='ident'>json</span>::{<span class='self'>self</span>, <span class='ident'>ToJson</span>, <span class='ident'>Json</span>};
 
 <span class='comment'>// A custom data structure</span>
@@ -182,13 +182,13 @@ which is required for custom mappings.</p>
         <span class='ident'>val</span>: <span class='ident'>num</span>.<span class='ident'>to_json</span>(),
     }).<span class='ident'>unwrap</span>();
     <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;data: {}&quot;</span>, <span class='ident'>data</span>);
-    <span class='comment'>// data: {&quot;uid&quot;:1,&quot;dsc&quot;:&quot;test&quot;,&quot;val&quot;:&quot;0.0001+12.539j&quot;};</span>
+    <span class='comment'>// data: {&quot;uid&quot;:1,&quot;dsc&quot;:&quot;test&quot;,&quot;val&quot;:&quot;0.0001+12.539i&quot;};</span>
 }
 </pre>
 
 <h3 id="verbose-example-of-tojson-usage" class='section-header'><a
                            href="#verbose-example-of-tojson-usage">Verbose example of <code>ToJson</code> usage</a></h3><pre id='rust-example-rendered' class='rust '>
-<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='string'>&quot;rustc-serialize&quot;</span> <span class='kw'>as</span> <span class='ident'>rustc_serialize</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>collections</span>::<span class='ident'>BTreeMap</span>;
 <span class='kw'>use</span> <span class='ident'>rustc_serialize</span>::<span class='ident'>json</span>::{<span class='self'>self</span>, <span class='ident'>Json</span>, <span class='ident'>ToJson</span>};
 
@@ -229,7 +229,7 @@ which is required for custom mappings.</p>
 
 <h2 id="parsing-a-str-to-json-and-reading-the-result" class='section-header'><a
                            href="#parsing-a-str-to-json-and-reading-the-result">Parsing a <code>str</code> to <code>Json</code> and reading the result</a></h2><pre id='rust-example-rendered' class='rust '>
-<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='string'>&quot;rustc-serialize&quot;</span> <span class='kw'>as</span> <span class='ident'>rustc_serialize</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
 <span class='kw'>use</span> <span class='ident'>rustc_serialize</span>::<span class='ident'>json</span>::<span class='ident'>Json</span>;
 
 <span class='kw'>fn</span> <span class='ident'>main</span>() {

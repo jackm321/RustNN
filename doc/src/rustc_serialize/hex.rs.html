@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rustc-serialize-0.3.7/src/hex.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rustc-serialize-0.3.14/src/hex.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>hex.rs.html -- source</title>
@@ -307,7 +307,7 @@
     <span class='doccomment'>/// # Example</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```rust</span>
-    <span class='doccomment'>/// extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+    <span class='doccomment'>/// extern crate rustc_serialize;</span>
     <span class='doccomment'>/// use rustc_serialize::hex::ToHex;</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// fn main () {</span>
@@ -336,7 +336,7 @@
 }
 
 <span class='doccomment'>/// Errors that can occur when decoding a hex encoded string</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>FromHexError</span> {
     <span class='doccomment'>/// The input contained a character not part of the hex format</span>
     <span class='ident'>InvalidHexCharacter</span>(<span class='ident'>char</span>, <span class='ident'>usize</span>),
@@ -381,7 +381,7 @@
     <span class='doccomment'>/// This converts a string literal to hexadecimal and back.</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```rust</span>
-    <span class='doccomment'>/// extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+    <span class='doccomment'>/// extern crate rustc_serialize;</span>
     <span class='doccomment'>/// use rustc_serialize::hex::{FromHex, ToHex};</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// fn main () {</span>

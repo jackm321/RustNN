@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.3/src/distributions/normal.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.8/src/distributions/normal.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>normal.rs.html -- source</title>
@@ -254,8 +254,6 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2013 The Rust Project Developers. See the COPYRIGHT</span>
 <span class='comment'>// file at the top-level directory of this distribution and at</span>
@@ -268,8 +266,6 @@
 <span class='comment'>// except according to those terms.</span>
 
 <span class='doccomment'>//! The normal and derived distributions.</span>
-
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Float</span>;
 
 <span class='kw'>use</span> {<span class='ident'>Rng</span>, <span class='ident'>Rand</span>, <span class='ident'>Open01</span>};
 <span class='kw'>use</span> <span class='ident'>distributions</span>::{<span class='ident'>ziggurat</span>, <span class='ident'>ziggurat_tables</span>, <span class='ident'>Sample</span>, <span class='ident'>IndependentSample</span>};
@@ -287,7 +283,7 @@
 <span class='doccomment'>/// Generate Normal Random</span>
 <span class='doccomment'>/// Samples*](http://www.doornik.com/research/ziggurat.pdf). Nuffield</span>
 <span class='doccomment'>/// College, Oxford</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>StandardNormal</span>(<span class='kw'>pub</span> <span class='ident'>f64</span>);
 
 <span class='kw'>impl</span> <span class='ident'>Rand</span> <span class='kw'>for</span> <span class='ident'>StandardNormal</span> {
@@ -342,7 +338,7 @@
 <span class='doccomment'>/// let v = normal.ind_sample(&amp;mut rand::thread_rng());</span>
 <span class='doccomment'>/// println!(&quot;{} is from a N(2, 9) distribution&quot;, v)</span>
 <span class='doccomment'>/// ```</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Normal</span> {
     <span class='ident'>mean</span>: <span class='ident'>f64</span>,
     <span class='ident'>std_dev</span>: <span class='ident'>f64</span>,
@@ -389,7 +385,7 @@
 <span class='doccomment'>/// let v = log_normal.ind_sample(&amp;mut rand::thread_rng());</span>
 <span class='doccomment'>/// println!(&quot;{} is from an ln N(2, 9) distribution&quot;, v)</span>
 <span class='doccomment'>/// ```</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>LogNormal</span> {
     <span class='ident'>norm</span>: <span class='ident'>Normal</span>
 }

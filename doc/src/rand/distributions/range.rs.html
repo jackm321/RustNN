@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.3/src/distributions/range.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.3.8/src/distributions/range.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>range.rs.html -- source</title>
@@ -271,8 +271,6 @@
 <span id="229">229</span>
 <span id="230">230</span>
 <span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2013 The Rust Project Developers. See the COPYRIGHT</span>
 <span class='comment'>// file at the top-level directory of this distribution and at</span>
@@ -288,8 +286,7 @@
 
 <span class='comment'>// this is surprisingly complicated to be both generic &amp; correct</span>
 
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Int</span>;
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>wrapping</span>::<span class='ident'>Wrapping</span> <span class='kw'>as</span> <span class='ident'>w</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Wrapping</span> <span class='kw'>as</span> <span class='ident'>w</span>;
 
 <span class='kw'>use</span> <span class='ident'>Rng</span>;
 <span class='kw'>use</span> <span class='ident'>distributions</span>::{<span class='ident'>Sample</span>, <span class='ident'>IndependentSample</span>};
@@ -323,7 +320,7 @@
 <span class='doccomment'>///     println!(&quot;{}&quot;, sum);</span>
 <span class='doccomment'>/// }</span>
 <span class='doccomment'>/// ```</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Range</span><span class='op'>&lt;</span><span class='ident'>X</span><span class='op'>&gt;</span> {
     <span class='ident'>low</span>: <span class='ident'>X</span>,
     <span class='ident'>range</span>: <span class='ident'>X</span>,
@@ -365,7 +362,7 @@
 }
 
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>integer_impl</span> {
-    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>:<span class='ident'>ty</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span>:<span class='ident'>ty</span>) <span class='op'>=&gt;</span> {
+    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>:<span class='ident'>ty</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span>:<span class='ident'>ident</span>) <span class='op'>=&gt;</span> {
         <span class='kw'>impl</span> <span class='ident'>SampleRange</span> <span class='kw'>for</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span> {
             <span class='comment'>// we play free and fast with unsigned vs signed here</span>
             <span class='comment'>// (when $ty is signed), but that&#39;s fine, since the</span>
@@ -375,7 +372,7 @@
 
             <span class='kw'>fn</span> <span class='ident'>construct_range</span>(<span class='ident'>low</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>, <span class='ident'>high</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>) <span class='op'>-&gt;</span> <span class='ident'>Range</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span><span class='op'>&gt;</span> {
                 <span class='kw'>let</span> <span class='ident'>range</span> <span class='op'>=</span> (<span class='ident'>w</span>(<span class='ident'>high</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span>) <span class='op'>-</span> <span class='ident'>w</span>(<span class='ident'>low</span> <span class='kw'>as</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span>)).<span class='number'>0</span>;
-                <span class='kw'>let</span> <span class='ident'>unsigned_max</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span> <span class='op'>=</span> <span class='ident'>Int</span>::<span class='ident'>max_value</span>();
+                <span class='kw'>let</span> <span class='ident'>unsigned_max</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span> <span class='op'>=</span> ::<span class='ident'>std</span>::<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>unsigned</span>::<span class='ident'>MAX</span>;
 
                 <span class='comment'>// this is the largest number that fits into $unsigned</span>
                 <span class='comment'>// that `range` divides evenly, so, if we&#39;ve sampled</span>
@@ -429,7 +426,7 @@
                 }
             }
             <span class='kw'>fn</span> <span class='ident'>sample_range</span><span class='op'>&lt;</span><span class='ident'>R</span>: <span class='ident'>Rng</span><span class='op'>&gt;</span>(<span class='ident'>r</span>: <span class='kw-2'>&amp;</span><span class='ident'>Range</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span><span class='op'>&gt;</span>, <span class='ident'>rng</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>R</span>) <span class='op'>-&gt;</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span> {
-                <span class='ident'>r</span>.<span class='ident'>low</span> <span class='op'>+</span> <span class='ident'>r</span>.<span class='ident'>range</span> <span class='op'>*</span> <span class='ident'>rng</span>.<span class='ident'>gen</span>()
+                <span class='ident'>r</span>.<span class='ident'>low</span> <span class='op'>+</span> <span class='ident'>r</span>.<span class='ident'>range</span> <span class='op'>*</span> <span class='ident'>rng</span>.<span class='ident'>gen</span>::<span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span><span class='op'>&gt;</span>()
             }
         }
     }
@@ -440,7 +437,6 @@
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
 <span class='kw'>mod</span> <span class='ident'>tests</span> {
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Int</span>;
     <span class='kw'>use</span> <span class='ident'>distributions</span>::{<span class='ident'>Sample</span>, <span class='ident'>IndependentSample</span>};
     <span class='kw'>use</span> <span class='ident'>super</span>::<span class='ident'>Range</span> <span class='kw'>as</span> <span class='ident'>Range</span>;
 
@@ -459,11 +455,11 @@
     <span class='kw'>fn</span> <span class='ident'>test_integers</span>() {
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rng</span> <span class='op'>=</span> ::<span class='ident'>test</span>::<span class='ident'>rng</span>();
         <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>t</span> {
-            ($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>:<span class='ident'>ty</span>),<span class='op'>*</span>) <span class='op'>=&gt;</span> {{
+            ($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>:<span class='ident'>ident</span>),<span class='op'>*</span>) <span class='op'>=&gt;</span> {{
                 $(
                    <span class='kw'>let</span> <span class='ident'>v</span>: <span class='kw-2'>&amp;</span>[(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>)] <span class='op'>=</span> <span class='kw-2'>&amp;</span>[(<span class='number'>0</span>, <span class='number'>10</span>),
                                             (<span class='number'>10</span>, <span class='number'>127</span>),
-                                            (<span class='ident'>Int</span>::<span class='ident'>min_value</span>(), <span class='ident'>Int</span>::<span class='ident'>max_value</span>())];
+                                            (::<span class='ident'>std</span>::<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>::<span class='ident'>MIN</span>, ::<span class='ident'>std</span>::<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span>::<span class='ident'>MAX</span>)];
                    <span class='kw'>for</span> <span class='kw-2'>&amp;</span>(<span class='ident'>low</span>, <span class='ident'>high</span>) <span class='kw'>in</span> <span class='ident'>v</span>.<span class='ident'>iter</span>() {
                         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>sampler</span>: <span class='ident'>Range</span><span class='op'>&lt;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>ty</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>Range</span>::<span class='ident'>new</span>(<span class='ident'>low</span>, <span class='ident'>high</span>);
                         <span class='kw'>for</span> _ <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>1000</span> {

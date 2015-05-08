@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rustc-serialize-0.3.7/src/base64.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rustc-serialize-0.3.14/src/base64.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>base64.rs.html -- source</title>
@@ -492,7 +492,7 @@
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>error</span>;
 
 <span class='doccomment'>/// Available encoding character sets</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>CharacterSet</span> {
     <span class='doccomment'>/// The standard character set (uses `+` and `/`)</span>
     <span class='ident'>Standard</span>,
@@ -501,7 +501,7 @@
 }
 
 <span class='doccomment'>/// Available newline types</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Newline</span> {
     <span class='doccomment'>/// A linefeed (i.e. Unix-style newline)</span>
     <span class='ident'>LF</span>,
@@ -510,7 +510,7 @@
 }
 
 <span class='doccomment'>/// Contains configuration parameters for `to_base64`.</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Config</span> {
     <span class='doccomment'>/// Character set to use</span>
     <span class='kw'>pub</span> <span class='ident'>char_set</span>: <span class='ident'>CharacterSet</span>,
@@ -555,7 +555,7 @@
     <span class='doccomment'>/// # Example</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```rust</span>
-    <span class='doccomment'>/// extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+    <span class='doccomment'>/// extern crate rustc_serialize;</span>
     <span class='doccomment'>/// use rustc_serialize::base64::{ToBase64, STANDARD};</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// fn main () {</span>
@@ -650,7 +650,7 @@
 }
 
 <span class='doccomment'>/// Errors that can occur when decoding a base64 encoded string</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>FromBase64Error</span> {
     <span class='doccomment'>/// The input contained a character not part of the base64 format</span>
     <span class='ident'>InvalidBase64Byte</span>(<span class='ident'>u8</span>, <span class='ident'>usize</span>),
@@ -695,7 +695,7 @@
     <span class='doccomment'>/// This converts a string literal to base64 and back.</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```rust</span>
-    <span class='doccomment'>/// extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+    <span class='doccomment'>/// extern crate rustc_serialize;</span>
     <span class='doccomment'>/// use rustc_serialize::base64::{ToBase64, FromBase64, STANDARD};</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// fn main () {</span>

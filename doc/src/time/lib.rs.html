@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.21/src/lib.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.25/src/lib.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>lib.rs.html -- source</title>
@@ -1539,6 +1539,52 @@
 <span id="1497">1497</span>
 <span id="1498">1498</span>
 <span id="1499">1499</span>
+<span id="1500">1500</span>
+<span id="1501">1501</span>
+<span id="1502">1502</span>
+<span id="1503">1503</span>
+<span id="1504">1504</span>
+<span id="1505">1505</span>
+<span id="1506">1506</span>
+<span id="1507">1507</span>
+<span id="1508">1508</span>
+<span id="1509">1509</span>
+<span id="1510">1510</span>
+<span id="1511">1511</span>
+<span id="1512">1512</span>
+<span id="1513">1513</span>
+<span id="1514">1514</span>
+<span id="1515">1515</span>
+<span id="1516">1516</span>
+<span id="1517">1517</span>
+<span id="1518">1518</span>
+<span id="1519">1519</span>
+<span id="1520">1520</span>
+<span id="1521">1521</span>
+<span id="1522">1522</span>
+<span id="1523">1523</span>
+<span id="1524">1524</span>
+<span id="1525">1525</span>
+<span id="1526">1526</span>
+<span id="1527">1527</span>
+<span id="1528">1528</span>
+<span id="1529">1529</span>
+<span id="1530">1530</span>
+<span id="1531">1531</span>
+<span id="1532">1532</span>
+<span id="1533">1533</span>
+<span id="1534">1534</span>
+<span id="1535">1535</span>
+<span id="1536">1536</span>
+<span id="1537">1537</span>
+<span id="1538">1538</span>
+<span id="1539">1539</span>
+<span id="1540">1540</span>
+<span id="1541">1541</span>
+<span id="1542">1542</span>
+<span id="1543">1543</span>
+<span id="1544">1544</span>
+<span id="1545">1545</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2012-2013 The Rust Project Developers. See the COPYRIGHT</span>
 <span class='comment'>// file at the top-level directory of this distribution and at</span>
@@ -1555,7 +1601,8 @@
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>doc</span>(<span class='ident'>html_logo_url</span> <span class='op'>=</span> <span class='string'>&quot;http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png&quot;</span>,
        <span class='ident'>html_favicon_url</span> <span class='op'>=</span> <span class='string'>&quot;http://www.rust-lang.org/favicon.ico&quot;</span>,
        <span class='ident'>html_root_url</span> <span class='op'>=</span> <span class='string'>&quot;http://doc.rust-lang.org/time/&quot;</span>)]</span>
-<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>feature</span>(<span class='ident'>std_misc</span>)]</span>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>cfg_attr</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;std-duration&quot;</span>, <span class='ident'>feature</span>(<span class='ident'>std_misc</span>))]</span>
+<span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>trivial_numeric_casts</span>)]</span>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>cfg_attr</span>(<span class='ident'>test</span>, <span class='ident'>deny</span>(<span class='ident'>warnings</span>))]</span>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>cfg_attr</span>(<span class='ident'>test</span>, <span class='ident'>feature</span>(<span class='ident'>test</span>, <span class='ident'>str_char</span>))]</span>
 
@@ -1563,23 +1610,28 @@
 
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>libc</span>;
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;rustc-serialize&quot;</span>)]</span>
-<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='string'>&quot;rustc-serialize&quot;</span> <span class='kw'>as</span> <span class='ident'>rustc_serialize</span>;
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
 
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>cmp</span>::<span class='ident'>Ordering</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::{<span class='ident'>Add</span>, <span class='ident'>Sub</span>};
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>Duration</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>;
+
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;std-duration&quot;</span>)]</span>      <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>Duration</span>;
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;std-duration&quot;</span>))]</span> <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>duration</span>::<span class='ident'>Duration</span>;
 
 <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>ParseError</span>::{<span class='ident'>InvalidDay</span>, <span class='ident'>InvalidDayOfMonth</span>, <span class='ident'>InvalidDayOfWeek</span>,
                        <span class='ident'>InvalidDayOfYear</span>, <span class='ident'>InvalidFormatSpecifier</span>, <span class='ident'>InvalidHour</span>,
                        <span class='ident'>InvalidMinute</span>, <span class='ident'>InvalidMonth</span>, <span class='ident'>InvalidSecond</span>, <span class='ident'>InvalidTime</span>,
-                       <span class='ident'>InvalidYear</span>, <span class='ident'>InvalidZoneOffset</span>, <span class='ident'>MissingFormatConverter</span>,
-                       <span class='ident'>UnexpectedCharacter</span>};
+                       <span class='ident'>InvalidYear</span>, <span class='ident'>InvalidZoneOffset</span>, <span class='ident'>InvalidSecondsSinceEpoch</span>,
+                       <span class='ident'>MissingFormatConverter</span>, <span class='ident'>UnexpectedCharacter</span>};
 
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>parse</span>::<span class='ident'>strptime</span>;
 
 <span class='kw'>mod</span> <span class='ident'>display</span>;
 <span class='kw'>mod</span> <span class='ident'>parse</span>;
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;std-duration&quot;</span>))]</span>
+<span class='kw'>mod</span> <span class='ident'>duration</span>;
 
 <span class='kw'>static</span> <span class='ident'>NSEC_PER_SEC</span>: <span class='ident'>i32</span> <span class='op'>=</span> <span class='number'>1_000_000_000</span>;
 
@@ -1588,7 +1640,7 @@
 
     <span class='kw'>extern</span> {
         <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rust_time_gmtime</span>(<span class='ident'>sec</span>: <span class='ident'>i64</span>, <span class='ident'>nsec</span>: <span class='ident'>i32</span>, <span class='ident'>result</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Tm</span>);
-        <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rust_time_localtime</span>(<span class='ident'>sec</span>: <span class='ident'>i64</span>, <span class='ident'>nsec</span>: <span class='ident'>i32</span>, <span class='ident'>result</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Tm</span>);
+        <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rust_time_localtime</span>(<span class='ident'>sec</span>: <span class='ident'>i64</span>, <span class='ident'>nsec</span>: <span class='ident'>i32</span>, <span class='ident'>result</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Tm</span>) <span class='op'>-&gt;</span> <span class='ident'>i32</span>;
         <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rust_time_timegm</span>(<span class='ident'>tm</span>: <span class='kw-2'>&amp;</span><span class='ident'>Tm</span>) <span class='op'>-&gt;</span> <span class='ident'>i64</span>;
         <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rust_time_mktime</span>(<span class='ident'>tm</span>: <span class='kw-2'>&amp;</span><span class='ident'>Tm</span>) <span class='op'>-&gt;</span> <span class='ident'>i64</span>;
     }
@@ -1598,9 +1650,10 @@
 <span class='kw'>mod</span> <span class='ident'>imp</span> {
     <span class='kw'>use</span> <span class='ident'>libc</span>::{<span class='ident'>c_int</span>, <span class='ident'>timespec</span>};
 
-    <span class='comment'>// Apparently android provides this in some other library?</span>
     <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;android&quot;</span>),
-              <span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;nacl&quot;</span>)))]</span>
+              <span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;bitrig&quot;</span>),
+              <span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;nacl&quot;</span>),
+              <span class='ident'>not</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;openbsd&quot;</span>)))]</span>
     <span class='attribute'>#[<span class='ident'>link</span>(<span class='ident'>name</span> <span class='op'>=</span> <span class='string'>&quot;rt&quot;</span>)]</span>
     <span class='kw'>extern</span> {}
 
@@ -1739,7 +1792,7 @@
 
     <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>windows</span>)]</span>
     <span class='kw'>unsafe</span> <span class='kw'>fn</span> <span class='ident'>os_get_time</span>() <span class='op'>-&gt;</span> (<span class='ident'>i64</span>, <span class='ident'>i32</span>) {
-        <span class='kw'>static</span> <span class='ident'>NANOSECONDS_FROM_1601_TO_1970</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='number'>11644473600000000</span>;
+        <span class='kw'>static</span> <span class='ident'>MICROSECONDS_FROM_1601_TO_1970</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='number'>11644473600000000</span>;
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>time</span> <span class='op'>=</span> <span class='ident'>libc</span>::<span class='ident'>FILETIME</span> {
             <span class='ident'>dwLowDateTime</span>: <span class='number'>0</span>,
@@ -1750,12 +1803,12 @@
         <span class='comment'>// A FILETIME contains a 64-bit value representing the number of</span>
         <span class='comment'>// hectonanosecond (100-nanosecond) intervals since 1601-01-01T00:00:00Z.</span>
         <span class='comment'>// http://support.microsoft.com/kb/167296/en-us</span>
-        <span class='kw'>let</span> <span class='ident'>ns_since_1601</span> <span class='op'>=</span> (((<span class='ident'>time</span>.<span class='ident'>dwHighDateTime</span> <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>32</span>) <span class='op'>|</span>
+        <span class='kw'>let</span> <span class='ident'>us_since_1601</span> <span class='op'>=</span> (((<span class='ident'>time</span>.<span class='ident'>dwHighDateTime</span> <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>32</span>) <span class='op'>|</span>
                              ((<span class='ident'>time</span>.<span class='ident'>dwLowDateTime</span>  <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span>  <span class='number'>0</span>)) <span class='op'>/</span> <span class='number'>10</span>;
-        <span class='kw'>let</span> <span class='ident'>ns_since_1970</span> <span class='op'>=</span> <span class='ident'>ns_since_1601</span> <span class='op'>-</span> <span class='ident'>NANOSECONDS_FROM_1601_TO_1970</span>;
+        <span class='kw'>let</span> <span class='ident'>us_since_1970</span> <span class='op'>=</span> <span class='ident'>us_since_1601</span> <span class='op'>-</span> <span class='ident'>MICROSECONDS_FROM_1601_TO_1970</span>;
 
-        ((<span class='ident'>ns_since_1970</span> <span class='op'>/</span> <span class='number'>1000000</span>) <span class='kw'>as</span> <span class='ident'>i64</span>,
-         ((<span class='ident'>ns_since_1970</span> <span class='op'>%</span> <span class='number'>1000000</span>) <span class='op'>*</span> <span class='number'>1000</span>) <span class='kw'>as</span> <span class='ident'>i32</span>)
+        ((<span class='ident'>us_since_1970</span> <span class='op'>/</span> <span class='number'>1000000</span>) <span class='kw'>as</span> <span class='ident'>i64</span>,
+         ((<span class='ident'>us_since_1970</span> <span class='op'>%</span> <span class='number'>1000000</span>) <span class='op'>*</span> <span class='number'>1000</span>) <span class='kw'>as</span> <span class='ident'>i32</span>)
     }
 
     <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>any</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;macos&quot;</span>, <span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;ios&quot;</span>))]</span>
@@ -1830,8 +1883,8 @@
 <span class='doccomment'>/// Repeatedly call a function for 1 second:</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// ```rust</span>
-<span class='doccomment'>/// use std::time::Duration;</span>
-<span class='doccomment'>/// use time::PreciseTime;</span>
+<span class='doccomment'>/// # #![feature(std_misc)]</span>
+<span class='doccomment'>/// use time::{Duration, PreciseTime};</span>
 <span class='doccomment'>/// # fn do_some_work() {}</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// let start = PreciseTime::now();</span>
@@ -1840,7 +1893,6 @@
 <span class='doccomment'>///     do_some_work();</span>
 <span class='doccomment'>/// }</span>
 <span class='doccomment'>/// ```</span>
-<span class='attribute'>#[<span class='ident'>deprecated</span> <span class='op'>=</span> <span class='string'>&quot;use SteadyTime instead&quot;</span>]</span>
 <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>, <span class='ident'>Clone</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>PreciseTime</span>(<span class='ident'>u64</span>);
 
@@ -1883,8 +1935,8 @@
 <span class='doccomment'>/// Repeatedly call a function for 1 second:</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// ```rust</span>
-<span class='doccomment'>/// # use time::SteadyTime;</span>
-<span class='doccomment'>/// # use std::time::Duration;</span>
+<span class='doccomment'>/// # #![feature(std_misc)]</span>
+<span class='doccomment'>/// # use time::{Duration, SteadyTime};</span>
 <span class='doccomment'>/// # fn do_some_work() {}</span>
 <span class='doccomment'>/// let start = SteadyTime::now();</span>
 <span class='doccomment'>///</span>
@@ -1936,7 +1988,7 @@
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>any</span>(<span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;macos&quot;</span>, <span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;ios&quot;</span>))]</span>
 <span class='kw'>mod</span> <span class='ident'>steady</span> {
     <span class='kw'>use</span> <span class='ident'>imp</span>;
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>Duration</span>;
+    <span class='kw'>use</span> <span class='ident'>Duration</span>;
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::{<span class='ident'>Sub</span>, <span class='ident'>Add</span>};
 
     <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>, <span class='ident'>PartialOrd</span>, <span class='ident'>Ord</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>, <span class='ident'>Debug</span>)]</span>
@@ -1985,11 +2037,10 @@
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>any</span>(<span class='ident'>windows</span>, <span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;macos&quot;</span>, <span class='ident'>target_os</span> <span class='op'>=</span> <span class='string'>&quot;ios&quot;</span>)))]</span>
 <span class='kw'>mod</span> <span class='ident'>steady</span> {
-    <span class='kw'>use</span> {<span class='ident'>imp</span>, <span class='ident'>NSEC_PER_SEC</span>};
+    <span class='kw'>use</span> {<span class='ident'>imp</span>, <span class='ident'>NSEC_PER_SEC</span>, <span class='ident'>Duration</span>};
     <span class='kw'>use</span> <span class='ident'>libc</span>;
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>cmp</span>::{<span class='ident'>PartialOrd</span>, <span class='ident'>Ord</span>, <span class='ident'>Ordering</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>};
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::{<span class='ident'>Sub</span>, <span class='ident'>Add</span>};
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>Duration</span>;
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
 
     <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>)]</span>
@@ -2093,10 +2144,9 @@
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>windows</span>)]</span>
 <span class='kw'>mod</span> <span class='ident'>steady</span> {
-    <span class='kw'>use</span> <span class='ident'>imp</span>;
+    <span class='kw'>use</span> {<span class='ident'>imp</span>, <span class='ident'>Duration</span>};
     <span class='kw'>use</span> <span class='ident'>libc</span>;
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::{<span class='ident'>Sub</span>, <span class='ident'>Add</span>};
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>Duration</span>;
 
     <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Copy</span>, <span class='ident'>PartialOrd</span>, <span class='ident'>Ord</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>, <span class='ident'>Debug</span>)]</span>
     <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>SteadyTime</span> {
@@ -2273,7 +2323,10 @@
     <span class='kw'>unsafe</span> {
         <span class='kw'>let</span> <span class='ident'>Timespec</span> { <span class='ident'>sec</span>, <span class='ident'>nsec</span> } <span class='op'>=</span> <span class='ident'>clock</span>;
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>tm</span> <span class='op'>=</span> <span class='ident'>empty_tm</span>();
-        <span class='ident'>rustrt</span>::<span class='ident'>rust_time_localtime</span>(<span class='ident'>sec</span>, <span class='ident'>nsec</span>, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>tm</span>);
+        <span class='kw'>if</span> <span class='ident'>rustrt</span>::<span class='ident'>rust_time_localtime</span>(<span class='ident'>sec</span>, <span class='ident'>nsec</span>, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>tm</span>) <span class='op'>==</span> <span class='number'>0</span> {
+            <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;failed to call localtime: {}&quot;</span>,
+                   <span class='ident'>io</span>::<span class='ident'>Error</span>::<span class='ident'>last_os_error</span>());
+        }
         <span class='ident'>tm</span>
     }
 }
@@ -2303,7 +2356,10 @@
 
     <span class='doccomment'>/// Convert time to the UTC</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>to_utc</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>Tm</span> {
-        <span class='ident'>at_utc</span>(<span class='self'>self</span>.<span class='ident'>to_timespec</span>())
+        <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>tm_utcoff</span> {
+            <span class='number'>0</span> <span class='op'>=&gt;</span> <span class='op'>*</span><span class='self'>self</span>,
+            _ <span class='op'>=&gt;</span> <span class='ident'>at_utc</span>(<span class='self'>self</span>.<span class='ident'>to_timespec</span>())
+        }
     }
 
     <span class='doccomment'>/**
@@ -2386,7 +2442,7 @@
     }
 }
 
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>, <span class='ident'>Clone</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>ParseError</span> {
     <span class='ident'>InvalidSecond</span>,
     <span class='ident'>InvalidMinute</span>,
@@ -2399,6 +2455,7 @@
     <span class='ident'>InvalidDayOfYear</span>,
     <span class='ident'>InvalidZoneOffset</span>,
     <span class='ident'>InvalidTime</span>,
+    <span class='ident'>InvalidSecondsSinceEpoch</span>,
     <span class='ident'>MissingFormatConverter</span>,
     <span class='ident'>InvalidFormatSpecifier</span>(<span class='ident'>char</span>),
     <span class='ident'>UnexpectedCharacter</span>(<span class='ident'>char</span>, <span class='ident'>char</span>),
@@ -2418,6 +2475,7 @@
             <span class='ident'>InvalidDayOfYear</span> <span class='op'>=&gt;</span> <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;Invalid day of the year.&quot;</span>),
             <span class='ident'>InvalidZoneOffset</span> <span class='op'>=&gt;</span> <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;Invalid zone offset.&quot;</span>),
             <span class='ident'>InvalidTime</span> <span class='op'>=&gt;</span> <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;Invalid time.&quot;</span>),
+            <span class='ident'>InvalidSecondsSinceEpoch</span> <span class='op'>=&gt;</span> <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;Invalid seconds since epoch.&quot;</span>),
             <span class='ident'>MissingFormatConverter</span> <span class='op'>=&gt;</span> {
                 <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;missing format converter after `%`&quot;</span>)
             }
@@ -2508,13 +2566,11 @@
 <span class='kw'>mod</span> <span class='ident'>tests</span> {
     <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>test</span>;
     <span class='kw'>use</span> <span class='ident'>super</span>::{<span class='ident'>Timespec</span>, <span class='ident'>get_time</span>, <span class='ident'>precise_time_ns</span>, <span class='ident'>precise_time_s</span>, <span class='ident'>tzset</span>,
-                <span class='ident'>at_utc</span>, <span class='ident'>at</span>, <span class='ident'>strptime</span>, <span class='ident'>PreciseTime</span>, <span class='ident'>ParseError</span>};
+                <span class='ident'>at_utc</span>, <span class='ident'>at</span>, <span class='ident'>strptime</span>, <span class='ident'>PreciseTime</span>, <span class='ident'>ParseError</span>, <span class='ident'>Duration</span>};
     <span class='kw'>use</span> <span class='ident'>super</span>::<span class='ident'>mul_div_i64</span>;
     <span class='kw'>use</span> <span class='ident'>super</span>::<span class='ident'>ParseError</span>::{<span class='ident'>InvalidTime</span>, <span class='ident'>InvalidYear</span>, <span class='ident'>MissingFormatConverter</span>,
                             <span class='ident'>InvalidFormatSpecifier</span>};
 
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>f64</span>;
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>Duration</span>;
     <span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>test</span>::<span class='ident'>Bencher</span>;
 
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
@@ -2581,7 +2637,7 @@
 
     <span class='kw'>fn</span> <span class='ident'>test_precise_time</span>() {
         <span class='kw'>let</span> <span class='ident'>s0</span> <span class='op'>=</span> <span class='ident'>precise_time_s</span>();
-        <span class='macro'>debug</span><span class='macro'>!</span>(<span class='string'>&quot;s0={} sec&quot;</span>, <span class='ident'>f64</span>::<span class='ident'>to_str_digits</span>(<span class='ident'>s0</span>, <span class='number'>9</span>));
+        <span class='macro'>debug</span><span class='macro'>!</span>(<span class='string'>&quot;s0={} sec&quot;</span>, <span class='ident'>s0</span>);
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>s0</span> <span class='op'>&gt;</span> <span class='number'>0.</span>);
 
         <span class='kw'>let</span> <span class='ident'>ns0</span> <span class='op'>=</span> <span class='ident'>precise_time_ns</span>();
@@ -2709,8 +2765,20 @@
 
         <span class='kw'>fn</span> <span class='ident'>test</span>(<span class='ident'>s</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>, <span class='ident'>format</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>bool</span> {
             <span class='kw'>match</span> <span class='ident'>strptime</span>(<span class='ident'>s</span>, <span class='ident'>format</span>) {
-              <span class='prelude-val'>Ok</span>(<span class='kw-2'>ref</span> <span class='ident'>tm</span>) <span class='op'>=&gt;</span> {
+              <span class='prelude-val'>Ok</span>(<span class='ident'>tm</span>) <span class='op'>=&gt;</span> {
                 <span class='ident'>tm</span>.<span class='ident'>strftime</span>(<span class='ident'>format</span>).<span class='ident'>unwrap</span>().<span class='ident'>to_string</span>() <span class='op'>==</span> <span class='ident'>s</span>.<span class='ident'>to_string</span>()
+              },
+              <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{:?},  s={:?}, format={:?}&quot;</span>, <span class='ident'>e</span>, <span class='ident'>s</span>, <span class='ident'>format</span>)
+            }
+        }
+
+        <span class='kw'>fn</span> <span class='ident'>test_oneway</span>(<span class='ident'>s</span> : <span class='kw-2'>&amp;</span><span class='ident'>str</span>, <span class='ident'>format</span> : <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>bool</span> {
+            <span class='kw'>match</span> <span class='ident'>strptime</span>(<span class='ident'>s</span>, <span class='ident'>format</span>) {
+              <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> {
+                <span class='comment'>// oneway tests are used when reformatting the parsed Tm</span>
+                <span class='comment'>// back into a string can generate a different string</span>
+                <span class='comment'>// from the original (i.e. leading zeroes)</span>
+                <span class='boolval'>true</span>
               },
               <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{:?},  s={:?}, format={:?}&quot;</span>, <span class='ident'>e</span>, <span class='ident'>s</span>, <span class='ident'>format</span>)
             }
@@ -2817,15 +2885,39 @@
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test</span>(<span class='string'>&quot;6&quot;</span>, <span class='string'>&quot;%w&quot;</span>));
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test</span>(<span class='string'>&quot;2009&quot;</span>, <span class='string'>&quot;%Y&quot;</span>));
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test</span>(<span class='string'>&quot;09&quot;</span>, <span class='string'>&quot;%y&quot;</span>));
-        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>strptime</span>(<span class='string'>&quot;-0000&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span> <span class='op'>==</span>
-            <span class='number'>0</span>);
+
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test_oneway</span>(<span class='string'>&quot;3&quot;</span>,  <span class='string'>&quot;%d&quot;</span>));
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test_oneway</span>(<span class='string'>&quot;3&quot;</span>,  <span class='string'>&quot;%H&quot;</span>));
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test_oneway</span>(<span class='string'>&quot;3&quot;</span>,  <span class='string'>&quot;%e&quot;</span>));
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test_oneway</span>(<span class='string'>&quot;3&quot;</span>,  <span class='string'>&quot;%M&quot;</span>));
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test_oneway</span>(<span class='string'>&quot;3&quot;</span>,  <span class='string'>&quot;%S&quot;</span>));
+
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>strptime</span>(<span class='string'>&quot;-0000&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span> <span class='op'>==</span> <span class='number'>0</span>);
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>strptime</span>(<span class='string'>&quot;-00:00&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span> <span class='op'>==</span> <span class='number'>0</span>);
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='op'>-</span><span class='number'>28800</span>, <span class='ident'>strptime</span>(<span class='string'>&quot;-0800&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='op'>-</span><span class='number'>28800</span>, <span class='ident'>strptime</span>(<span class='string'>&quot;-08:00&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span>);
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='number'>28800</span>, <span class='ident'>strptime</span>(<span class='string'>&quot;+0800&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='number'>28800</span>, <span class='ident'>strptime</span>(<span class='string'>&quot;+08:00&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span>);
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='number'>5400</span>, <span class='ident'>strptime</span>(<span class='string'>&quot;+0130&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span>);
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='number'>5400</span>, <span class='ident'>strptime</span>(<span class='string'>&quot;+01:30&quot;</span>, <span class='string'>&quot;%z&quot;</span>).<span class='ident'>unwrap</span>().<span class='ident'>tm_utcoff</span>);
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test</span>(<span class='string'>&quot;%&quot;</span>, <span class='string'>&quot;%%&quot;</span>));
 
         <span class='comment'>// Test for #7256</span>
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>strptime</span>(<span class='string'>&quot;360&quot;</span>, <span class='string'>&quot;%Y-%m-%d&quot;</span>), <span class='prelude-val'>Err</span>(<span class='ident'>InvalidYear</span>));
+
+        <span class='comment'>// Test for epoch seconds parsing</span>
+        {
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>test</span>(<span class='string'>&quot;1428035610&quot;</span>, <span class='string'>&quot;%s&quot;</span>));
+            <span class='kw'>let</span> <span class='ident'>tm</span> <span class='op'>=</span> <span class='ident'>strptime</span>(<span class='string'>&quot;1428035610&quot;</span>, <span class='string'>&quot;%s&quot;</span>).<span class='ident'>unwrap</span>();
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_utcoff</span>, <span class='number'>0</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_isdst</span>, <span class='number'>0</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_yday</span>, <span class='number'>92</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_wday</span>, <span class='number'>5</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_year</span>, <span class='number'>115</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_mon</span>, <span class='number'>3</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_mday</span>, <span class='number'>3</span>);
+            <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>tm</span>.<span class='ident'>tm_hour</span>, <span class='number'>4</span>);
+        }
     }
 
     <span class='kw'>fn</span> <span class='ident'>test_asctime</span>() {

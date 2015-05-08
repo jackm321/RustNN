@@ -43,7 +43,7 @@
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>gcc</a>::<wbr><a class='struct' href=''>Config</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-13' href='../src/gcc/lib.rs.html#56-62'>[src]</a></span></h1>
+        </span><a id='src-13' href='../src/gcc/lib.rs.html#55-62'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Config {
     // some fields omitted
 }</pre><div class='docblock'><p>Extra configuration to pass to gcc.</p>
@@ -61,6 +61,8 @@
 <div class='docblock'><p>Add an arbitrary flag to the invocation of the compiler</p>
 </div><h4 id='method.file' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.file' class='fnname'>file</a>&lt;P: <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/path/struct.Path.html' title='std::path::Path'>Path</a>&gt;&gt;(&amp;mut self, p: P) -&gt; &amp;mut <a class='struct' href='../gcc/struct.Config.html' title='gcc::Config'>Config</a></code></h4>
 <div class='docblock'><p>Add a file which will be compiled</p>
+</div><h4 id='method.cpp' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.cpp' class='fnname'>cpp</a>(&amp;mut self, cpp: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; &amp;mut <a class='struct' href='../gcc/struct.Config.html' title='gcc::Config'>Config</a></code></h4>
+<div class='docblock'><p>Set C++ support</p>
 </div><h4 id='method.compile' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.compile' class='fnname'>compile</a>(&amp;self, output: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>)</code></h4>
 <div class='docblock'><p>Run the compiler, generating the file <code>output</code></p>
 

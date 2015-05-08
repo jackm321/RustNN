@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rustc-serialize-0.3.7/src/json.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/jmontgomery/.cargo/registry/src/github.com-1ecc6299db9ec823/rustc-serialize-0.3.14/src/json.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>json.rs.html -- source</title>
@@ -3988,6 +3988,16 @@
 <span id="3946">3946</span>
 <span id="3947">3947</span>
 <span id="3948">3948</span>
+<span id="3949">3949</span>
+<span id="3950">3950</span>
+<span id="3951">3951</span>
+<span id="3952">3952</span>
+<span id="3953">3953</span>
+<span id="3954">3954</span>
+<span id="3955">3955</span>
+<span id="3956">3956</span>
+<span id="3957">3957</span>
+<span id="3958">3958</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2012-2014 The Rust Project Developers. See the COPYRIGHT</span>
 <span class='comment'>// file at the top-level directory of this distribution and at</span>
@@ -4074,7 +4084,7 @@
 <span class='doccomment'>//! from JSON using the serialization API, using the derived serialization code.</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```rust</span>
-<span class='doccomment'>//! extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+<span class='doccomment'>//! extern crate rustc_serialize;</span>
 <span class='doccomment'>//! use rustc_serialize::json;</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! // Automatically generate `RustcDecodable` and `RustcEncodable` trait</span>
@@ -4109,7 +4119,7 @@
 <span class='doccomment'>//! ### Simple example of `ToJson` usage</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```rust</span>
-<span class='doccomment'>//! extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+<span class='doccomment'>//! extern crate rustc_serialize;</span>
 <span class='doccomment'>//! use rustc_serialize::json::{self, ToJson, Json};</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! // A custom data structure</span>
@@ -4141,14 +4151,14 @@
 <span class='doccomment'>//!         val: num.to_json(),</span>
 <span class='doccomment'>//!     }).unwrap();</span>
 <span class='doccomment'>//!     println!(&quot;data: {}&quot;, data);</span>
-<span class='doccomment'>//!     // data: {&quot;uid&quot;:1,&quot;dsc&quot;:&quot;test&quot;,&quot;val&quot;:&quot;0.0001+12.539j&quot;};</span>
+<span class='doccomment'>//!     // data: {&quot;uid&quot;:1,&quot;dsc&quot;:&quot;test&quot;,&quot;val&quot;:&quot;0.0001+12.539i&quot;};</span>
 <span class='doccomment'>//! }</span>
 <span class='doccomment'>//! ```</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ### Verbose example of `ToJson` usage</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```rust</span>
-<span class='doccomment'>//! extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+<span class='doccomment'>//! extern crate rustc_serialize;</span>
 <span class='doccomment'>//! use std::collections::BTreeMap;</span>
 <span class='doccomment'>//! use rustc_serialize::json::{self, Json, ToJson};</span>
 <span class='doccomment'>//!</span>
@@ -4190,7 +4200,7 @@
 <span class='doccomment'>//! ## Parsing a `str` to `Json` and reading the result</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```rust</span>
-<span class='doccomment'>//! extern crate &quot;rustc-serialize&quot; as rustc_serialize;</span>
+<span class='doccomment'>//! extern crate rustc_serialize;</span>
 <span class='doccomment'>//! use rustc_serialize::json::Json;</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! fn main() {</span>
@@ -4232,12 +4242,10 @@
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>i64</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>prelude</span>::<span class='op'>*</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>::<span class='ident'>swap</span>;
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::{<span class='ident'>Float</span>, <span class='ident'>Int</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::<span class='ident'>Index</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>str</span>::<span class='ident'>FromStr</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>string</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::{<span class='ident'>char</span>, <span class='ident'>f64</span>, <span class='ident'>fmt</span>, <span class='ident'>io</span>, <span class='ident'>str</span>};
-<span class='kw'>use</span> <span class='ident'>std</span>;
 
 <span class='kw'>use</span> <span class='ident'>Encodable</span>;
 
@@ -4285,17 +4293,28 @@
     <span class='ident'>NotUtf8</span>,
 }
 
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>ParserError</span> {
     <span class='doccomment'>/// msg, line, col</span>
     <span class='ident'>SyntaxError</span>(<span class='ident'>ErrorCode</span>, <span class='ident'>usize</span>, <span class='ident'>usize</span>),
     <span class='ident'>IoError</span>(<span class='ident'>io</span>::<span class='ident'>Error</span>),
 }
 
+<span class='kw'>impl</span> <span class='ident'>PartialEq</span> <span class='kw'>for</span> <span class='ident'>ParserError</span> {
+    <span class='kw'>fn</span> <span class='ident'>eq</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>other</span>: <span class='kw-2'>&amp;</span><span class='ident'>ParserError</span>) <span class='op'>-&gt;</span> <span class='ident'>bool</span> {
+        <span class='kw'>match</span> (<span class='self'>self</span>, <span class='ident'>other</span>) {
+            (<span class='kw-2'>&amp;</span><span class='ident'>SyntaxError</span>(<span class='ident'>msg0</span>, <span class='ident'>line0</span>, <span class='ident'>col0</span>), <span class='kw-2'>&amp;</span><span class='ident'>SyntaxError</span>(<span class='ident'>msg1</span>, <span class='ident'>line1</span>, <span class='ident'>col1</span>)) <span class='op'>=&gt;</span>
+                <span class='ident'>msg0</span> <span class='op'>==</span> <span class='ident'>msg1</span> <span class='op'>&amp;&amp;</span> <span class='ident'>line0</span> <span class='op'>==</span> <span class='ident'>line1</span> <span class='op'>&amp;&amp;</span> <span class='ident'>col0</span> <span class='op'>==</span> <span class='ident'>col1</span>,
+            (<span class='kw-2'>&amp;</span><span class='ident'>IoError</span>(_), _) <span class='op'>=&gt;</span> <span class='boolval'>false</span>,
+            (_, <span class='kw-2'>&amp;</span><span class='ident'>IoError</span>(_)) <span class='op'>=&gt;</span> <span class='boolval'>false</span>,
+        }
+    }
+}
+
 <span class='comment'>// Builder and Parser have the same errors.</span>
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>BuilderError</span> <span class='op'>=</span> <span class='ident'>ParserError</span>;
 
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>DecoderError</span> {
     <span class='ident'>ParseError</span>(<span class='ident'>ParserError</span>),
     <span class='ident'>ExpectedError</span>(<span class='ident'>string</span>::<span class='ident'>String</span>, <span class='ident'>string</span>::<span class='ident'>String</span>),
@@ -4309,6 +4328,10 @@
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>EncoderError</span> {
     <span class='ident'>FmtError</span>(<span class='ident'>fmt</span>::<span class='ident'>Error</span>),
     <span class='ident'>BadHashmapKey</span>,
+}
+
+<span class='kw'>impl</span> <span class='ident'>Clone</span> <span class='kw'>for</span> <span class='ident'>EncoderError</span> {
+    <span class='kw'>fn</span> <span class='ident'>clone</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> { <span class='op'>*</span><span class='self'>self</span> }
 }
 
 <span class='doccomment'>/// Returns a readable error string for a given error code.</span>
@@ -4370,7 +4393,7 @@
     <span class='kw'>fn</span> <span class='ident'>description</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='string'>&quot;decoder error&quot;</span> }
     <span class='kw'>fn</span> <span class='ident'>cause</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>StdError</span><span class='op'>&gt;</span> {
         <span class='kw'>match</span> <span class='op'>*</span><span class='self'>self</span> {
-            <span class='ident'>DecoderError</span>::<span class='ident'>ParseError</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='ident'>e</span> <span class='kw'>as</span> <span class='kw-2'>&amp;</span><span class='ident'>StdError</span>),
+            <span class='ident'>DecoderError</span>::<span class='ident'>ParseError</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='ident'>e</span>),
             _ <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
         }
     }
@@ -4402,8 +4425,8 @@
     }
 }
 
-<span class='kw'>impl</span> <span class='ident'>std</span>::<span class='ident'>error</span>::<span class='ident'>FromError</span><span class='op'>&lt;</span><span class='ident'>fmt</span>::<span class='ident'>Error</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>EncoderError</span> {
-    <span class='kw'>fn</span> <span class='ident'>from_error</span>(<span class='ident'>err</span>: <span class='ident'>fmt</span>::<span class='ident'>Error</span>) <span class='op'>-&gt;</span> <span class='ident'>EncoderError</span> { <span class='ident'>EncoderError</span>::<span class='ident'>FmtError</span>(<span class='ident'>err</span>) }
+<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>fmt</span>::<span class='ident'>Error</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>EncoderError</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>err</span>: <span class='ident'>fmt</span>::<span class='ident'>Error</span>) <span class='op'>-&gt;</span> <span class='ident'>EncoderError</span> { <span class='ident'>EncoderError</span>::<span class='ident'>FmtError</span>(<span class='ident'>err</span>) }
 }
 
 <span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>EncodeResult</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>T</span>, <span class='ident'>EncoderError</span><span class='op'>&gt;</span>;
@@ -5156,7 +5179,7 @@
 }
 
 <span class='doccomment'>/// The output of the streaming parser.</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>PartialEq</span>, <span class='ident'>Clone</span>, <span class='ident'>Debug</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>JsonEvent</span> {
     <span class='ident'>ObjectStart</span>,
     <span class='ident'>ObjectEnd</span>,
@@ -5454,13 +5477,11 @@
             <span class='ident'>F64Value</span>(<span class='ident'>res</span>)
         } <span class='kw'>else</span> {
             <span class='kw'>if</span> <span class='ident'>neg</span> {
-                <span class='kw'>let</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='op'>-</span>(<span class='ident'>res</span> <span class='kw'>as</span> <span class='ident'>i64</span>);
-
-                <span class='comment'>// Make sure we didn&#39;t underflow.</span>
-                <span class='kw'>if</span> <span class='ident'>res</span> <span class='op'>&gt;</span> <span class='number'>0</span> {
+                <span class='comment'>// Make sure we don&#39;t underflow.</span>
+                <span class='kw'>if</span> <span class='ident'>res</span> <span class='op'>&gt;</span> (<span class='ident'>i64</span>::<span class='ident'>MAX</span> <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>+</span> <span class='number'>1</span> {
                     <span class='ident'>Error</span>(<span class='ident'>SyntaxError</span>(<span class='ident'>InvalidNumber</span>, <span class='self'>self</span>.<span class='ident'>line</span>, <span class='self'>self</span>.<span class='ident'>col</span>))
                 } <span class='kw'>else</span> {
-                    <span class='ident'>I64Value</span>(<span class='ident'>res</span>)
+                    <span class='ident'>I64Value</span>((<span class='op'>!</span><span class='ident'>res</span> <span class='op'>+</span> <span class='number'>1</span>) <span class='kw'>as</span> <span class='ident'>i64</span>)
                 }
             } <span class='kw'>else</span> {
                 <span class='ident'>U64Value</span>(<span class='ident'>res</span>)
@@ -5469,7 +5490,7 @@
     }
 
     <span class='kw'>fn</span> <span class='ident'>parse_u64</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>u64</span>, <span class='ident'>ParserError</span><span class='op'>&gt;</span> {
-        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>accum</span> <span class='op'>=</span> <span class='number'>0</span>;
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>accum</span>: <span class='ident'>u64</span> <span class='op'>=</span> <span class='number'>0</span>;
 
         <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>ch_or_null</span>() {
             <span class='string'>&#39;0&#39;</span> <span class='op'>=&gt;</span> {
@@ -5896,10 +5917,10 @@
         <span class='self'>self</span>.<span class='ident'>bump</span>();
         <span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>build_value</span>();
         <span class='self'>self</span>.<span class='ident'>bump</span>();
-        <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>token</span> {
+        <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>token</span>.<span class='ident'>take</span>() {
             <span class='prelude-val'>None</span> <span class='op'>=&gt;</span> {}
-            <span class='prelude-val'>Some</span>(<span class='ident'>Error</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>)) <span class='op'>=&gt;</span> { <span class='kw'>return</span> <span class='prelude-val'>Err</span>(<span class='ident'>e</span>.<span class='ident'>clone</span>()); }
-            <span class='kw-2'>ref</span> <span class='ident'>tok</span> <span class='op'>=&gt;</span> { <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;unexpected token {:?}&quot;</span>, <span class='ident'>tok</span>.<span class='ident'>clone</span>()); }
+            <span class='prelude-val'>Some</span>(<span class='ident'>Error</span>(<span class='ident'>e</span>)) <span class='op'>=&gt;</span> { <span class='kw'>return</span> <span class='prelude-val'>Err</span>(<span class='ident'>e</span>); }
+            <span class='kw-2'>ref</span> <span class='ident'>tok</span> <span class='op'>=&gt;</span> { <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;unexpected token {:?}&quot;</span>, <span class='ident'>tok</span>); }
         }
         <span class='ident'>result</span>
     }
@@ -5909,7 +5930,7 @@
     }
 
     <span class='kw'>fn</span> <span class='ident'>build_value</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Json</span>, <span class='ident'>BuilderError</span><span class='op'>&gt;</span> {
-        <span class='kw'>return</span> <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>token</span> {
+        <span class='kw'>return</span> <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>token</span>.<span class='ident'>take</span>() {
             <span class='prelude-val'>Some</span>(<span class='ident'>NullValue</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Json</span>::<span class='ident'>Null</span>),
             <span class='prelude-val'>Some</span>(<span class='ident'>I64Value</span>(<span class='ident'>n</span>)) <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Json</span>::<span class='ident'>I64</span>(<span class='ident'>n</span>)),
             <span class='prelude-val'>Some</span>(<span class='ident'>U64Value</span>(<span class='ident'>n</span>)) <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Json</span>::<span class='ident'>U64</span>(<span class='ident'>n</span>)),
@@ -5920,7 +5941,7 @@
                 <span class='ident'>swap</span>(<span class='ident'>s</span>, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>temp</span>);
                 <span class='prelude-val'>Ok</span>(<span class='ident'>Json</span>::<span class='ident'>String</span>(<span class='ident'>temp</span>))
             }
-            <span class='prelude-val'>Some</span>(<span class='ident'>Error</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>)) <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='ident'>e</span>.<span class='ident'>clone</span>()),
+            <span class='prelude-val'>Some</span>(<span class='ident'>Error</span>(<span class='ident'>e</span>)) <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='ident'>e</span>),
             <span class='prelude-val'>Some</span>(<span class='ident'>ArrayStart</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>build_array</span>(),
             <span class='prelude-val'>Some</span>(<span class='ident'>ObjectStart</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>build_object</span>(),
             <span class='prelude-val'>Some</span>(<span class='ident'>ObjectEnd</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>parser</span>.<span class='ident'>error</span>(<span class='ident'>InvalidSyntax</span>),
@@ -5934,7 +5955,7 @@
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>values</span> <span class='op'>=</span> <span class='ident'>Vec</span>::<span class='ident'>new</span>();
 
         <span class='kw'>loop</span> {
-            <span class='kw'>if</span> <span class='self'>self</span>.<span class='ident'>token</span> <span class='op'>==</span> <span class='prelude-val'>Some</span>(<span class='ident'>ArrayEnd</span>) {
+            <span class='kw'>if</span> <span class='kw'>let</span> <span class='prelude-val'>Some</span>(<span class='ident'>ArrayEnd</span>) <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>token</span> {
                 <span class='kw'>return</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Json</span>::<span class='ident'>Array</span>(<span class='ident'>values</span>.<span class='ident'>into_iter</span>().<span class='ident'>collect</span>()));
             }
             <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>build_value</span>() {
@@ -5951,11 +5972,11 @@
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>values</span> <span class='op'>=</span> <span class='ident'>BTreeMap</span>::<span class='ident'>new</span>();
 
         <span class='kw'>loop</span> {
-            <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>token</span> {
+            <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>token</span>.<span class='ident'>take</span>() {
                 <span class='prelude-val'>Some</span>(<span class='ident'>ObjectEnd</span>) <span class='op'>=&gt;</span> { <span class='kw'>return</span> <span class='prelude-val'>Ok</span>(<span class='ident'>Json</span>::<span class='ident'>Object</span>(<span class='ident'>values</span>)); }
-                <span class='prelude-val'>Some</span>(<span class='ident'>Error</span>(<span class='kw-2'>ref</span> <span class='ident'>e</span>)) <span class='op'>=&gt;</span> { <span class='kw'>return</span> <span class='prelude-val'>Err</span>(<span class='ident'>e</span>.<span class='ident'>clone</span>()); }
+                <span class='prelude-val'>Some</span>(<span class='ident'>Error</span>(<span class='ident'>e</span>)) <span class='op'>=&gt;</span> { <span class='kw'>return</span> <span class='prelude-val'>Err</span>(<span class='ident'>e</span>); }
                 <span class='prelude-val'>None</span> <span class='op'>=&gt;</span> { <span class='kw'>break</span>; }
-                _ <span class='op'>=&gt;</span> {}
+                <span class='ident'>token</span> <span class='op'>=&gt;</span> { <span class='self'>self</span>.<span class='ident'>token</span> <span class='op'>=</span> <span class='ident'>token</span>; }
             }
             <span class='kw'>let</span> <span class='ident'>key</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>parser</span>.<span class='ident'>stack</span>().<span class='ident'>top</span>() {
                 <span class='prelude-val'>Some</span>(<span class='ident'>StackElement</span>::<span class='ident'>Key</span>(<span class='ident'>k</span>)) <span class='op'>=&gt;</span> { <span class='ident'>k</span>.<span class='ident'>to_string</span>() }
@@ -6536,7 +6557,6 @@
                 <span class='ident'>StackElement</span>, <span class='ident'>Stack</span>, <span class='ident'>Decoder</span>, <span class='ident'>Encoder</span>, <span class='ident'>EncoderError</span>};
     <span class='kw'>use</span> <span class='ident'>std</span>::{<span class='ident'>i64</span>, <span class='ident'>u64</span>, <span class='ident'>f32</span>, <span class='ident'>f64</span>};
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>collections</span>::<span class='ident'>BTreeMap</span>;
-    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>num</span>::<span class='ident'>Float</span>;
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>string</span>;
 
     <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>RustcDecodable</span>, <span class='ident'>Eq</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Debug</span>)]</span>
@@ -6929,7 +6949,8 @@
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>v</span>, <span class='ident'>i64</span>::<span class='ident'>MAX</span>);
 
         <span class='kw'>let</span> <span class='ident'>res</span>: <span class='ident'>DecodeResult</span><span class='op'>&lt;</span><span class='ident'>i64</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>super</span>::<span class='ident'>decode</span>(<span class='string'>&quot;765.25252&quot;</span>);
-        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>res</span>, <span class='prelude-val'>Err</span>(<span class='ident'>ExpectedError</span>(<span class='string'>&quot;Integer&quot;</span>.<span class='ident'>to_string</span>(), <span class='string'>&quot;765.25252&quot;</span>.<span class='ident'>to_string</span>())));
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>res</span>, <span class='prelude-val'>Err</span>(<span class='ident'>ExpectedError</span>(<span class='string'>&quot;Integer&quot;</span>.<span class='ident'>to_string</span>(),
+                                          <span class='string'>&quot;765.25252&quot;</span>.<span class='ident'>to_string</span>())));
     }
 
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
@@ -7835,13 +7856,12 @@
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
     <span class='kw'>fn</span> <span class='ident'>test_encode_hashmap_with_arbitrary_key</span>() {
         <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>collections</span>::<span class='ident'>HashMap</span>;
-        <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
         <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>, <span class='ident'>Hash</span>, <span class='ident'>RustcEncodable</span>)]</span>
         <span class='kw'>struct</span> <span class='ident'>ArbitraryType</span>(<span class='ident'>u32</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>hm</span>: <span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>ArbitraryType</span>, <span class='ident'>bool</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>HashMap</span>::<span class='ident'>new</span>();
         <span class='ident'>hm</span>.<span class='ident'>insert</span>(<span class='ident'>ArbitraryType</span>(<span class='number'>1</span>), <span class='boolval'>true</span>);
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>mem_buf</span> <span class='op'>=</span> <span class='ident'>string</span>::<span class='ident'>String</span>::<span class='ident'>new</span>();
-        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>encoder</span> <span class='op'>=</span> <span class='ident'>Encoder</span>::<span class='ident'>new</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>mem_buf</span> <span class='kw'>as</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>fmt</span>::<span class='ident'>Write</span>);
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>encoder</span> <span class='op'>=</span> <span class='ident'>Encoder</span>::<span class='ident'>new</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>mem_buf</span>);
         <span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='ident'>hm</span>.<span class='ident'>encode</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>encoder</span>);
         <span class='kw'>match</span> <span class='ident'>result</span>.<span class='ident'>err</span>().<span class='ident'>unwrap</span>() {
             <span class='ident'>EncoderError</span>::<span class='ident'>BadHashmapKey</span> <span class='op'>=&gt;</span> (),
