@@ -10,11 +10,10 @@ An easy to use neural network library written in Rust.
 
 ## Description
 RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
-library that uses parallelization to quickly learn over large datasets. The library
+library. The library
 generates fully connected multi-layer artificial neural networks that
 are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
-Networks can be trained using a incremental training mode or they
-can be trained (optionally in parallel) using a batch training mode.
+Networks are trained using an incremental training mode.
 
 ## XOR example
 
@@ -28,7 +27,7 @@ given examples. See the documentation for the `NN` and `Trainer` structs
 for more details.
 
 ```rust
-use nn::{NN, HaltCondition, LearningMode};
+use nn::{NN, HaltCondition};
 
 // create examples of the XOR function
 // the network is trained on tuples of vectors where the first vector
@@ -51,16 +50,15 @@ let mut net = NN::new(&[2, 3, 1]);
 // see the documentation for the Trainer struct for more info on what each method does
 net.train(&examples)
     .halt_condition( HaltCondition::Epochs(10000) )
-    .learning_mode( LearningMode::Incremental )
     .log_interval( Some(100) )
-    .momentum(0.1)
-    .rate(0.3)
+    .momentum( 0.1 )
+    .rate( 0.3 )
     .go();
     
 // evaluate the network to see if it learned the XOR function
 for &(ref inputs, ref outputs) in examples.iter() {
     let results = net.run(inputs);
-    let (result, key) = (Float::round(results[0]), outputs[0]);
+    let (result, key) = (results[0].round(), outputs[0]);
     assert!(result == key);
 }
 ```
