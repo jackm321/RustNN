@@ -67,9 +67,9 @@ use rustc_serialize::json;
 use time::{ Duration, PreciseTime };
 use rand::Rng;
 
-static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
-static DEFAULT_MOMENTUM: f64 = 0f64;
-static DEFAULT_EPOCHS: u32 = 1000;
+const DEFAULT_LEARNING_RATE: f64 = 0.3f64;
+const DEFAULT_MOMENTUM: f64 = 0f64;
+const DEFAULT_EPOCHS: u32 = 1000;
 
 /// Specifies when to stop training the network
 #[derive(Debug, Copy, Clone)]
