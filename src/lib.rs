@@ -391,7 +391,7 @@ impl NN {
 
             for (node_index, (node, &result)) in iter_zip_enum(layer_nodes, layer_results) {
                 let mut node_weight_updates = Vec::new();
-                let mut node_error;
+                let node_error;
 
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
@@ -407,7 +407,7 @@ impl NN {
 
                 // calculate weight updates for this node
                 for weight_index in 0..node.len() {
-                    let mut prev_layer_result;
+                    let prev_layer_result;
                     if weight_index == 0 {
                         prev_layer_result = 1f64; // threshold
                     } else {
