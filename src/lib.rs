@@ -57,14 +57,13 @@
 
 extern crate rand;
 extern crate rustc_serialize;
-extern crate time;
 
 use HaltCondition::{ Epochs, MSE, Timer };
 use LearningMode::{ Incremental };
 use std::iter::{Zip, Enumerate};
 use std::slice;
+use std::time::{ Duration, Instant };
 use rustc_serialize::json;
-use time::{ Duration, PreciseTime };
 use rand::Rng;
 
 static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
@@ -299,7 +298,7 @@ impl NN {
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
         let mut epochs = 0u32;
         let mut training_error_rate = 0f64;
-        let start_time = PreciseTime::now();
+        let start_time = Instant::now();
 
         loop {
 
@@ -321,8 +320,7 @@ impl NN {
                         if training_error_rate <= target_error { break }
                     },
                     Timer(duration) => {
-                        let now = PreciseTime::now();
-                        if start_time.to(now) >= duration { break }
+                        if start_time.elapsed() >= duration { break }
                     }
                 }
             }
