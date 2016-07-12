@@ -1,5 +1,4 @@
 extern crate nn;
-extern crate time;
 
 use nn::{NN, HaltCondition, LearningMode};
 

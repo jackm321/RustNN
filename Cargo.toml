@@ -16,6 +16,5 @@ keywords = ["nn", "neural-network", "classifier", "backpropagation",
             "machine-learning"]
 
 [dependencies]
-rand = "0.3.7"
-rustc-serialize = "0.3.12"
-time = "0.1.24"
+rand = "0.3.14"
+rustc-serialize = "0.3.19"
