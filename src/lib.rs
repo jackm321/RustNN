@@ -74,6 +74,10 @@ const DEFAULT_LAMBDA: f64 = 0.0f64;
 const DEFAULT_MOMENTUM: f64 = 0.0f64;
 const DEFAULT_EPOCHS: u32 = 1000;
 
+const PELU_FACTOR_A: f64 = 1.0f64;
+const PELU_FACTOR_B: f64 = 1.0f64;
+
+
 /// Specifies when to stop training the network
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCondition {
@@ -364,7 +368,8 @@ impl NN {
         for (layer_index, layer) in self.layers.iter().enumerate() {
             let mut layer_results = Vec::new();
             for node in layer.iter() {
-                layer_results.push( relu(modified_dotprod(&node, &results[layer_index])) )
+                layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ) //pelu
+				//layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ) //sigmoid
             }
             results.push(layer_results);
         }
@@ -388,7 +393,6 @@ impl NN {
                 }
             }
         }
-
     }
 
     // calculates all weight updates by backpropagation
@@ -411,14 +415,18 @@ impl NN {
 				
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
-                    node_error = (if result > 0.0f64 { 1.0f64 } else { 0.0f64 }) * (targets[node_index] - result); //derivative of activation function appears here
+					let act_deriv = if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }; //pelu
+					//let act_deriv = result * (1.0 - result); //sigmoid
+                    node_error = act_deriv * (targets[node_index] - result);
                 } else {
                     let mut sum = 0f64;
                     let next_layer_errors = &network_errors[network_errors.len() - 1];
                     for (next_node, &next_node_error_data) in next_layer_nodes.unwrap().iter().zip((next_layer_errors).iter()) {
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
-                    node_error = (if result > 0.0f64 { 1.0f64 } else { 0.0f64 }) * sum; //derivative of activation function appears here
+					let act_deriv = if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }; //pelu
+					//let act_deriv = result * (1.0 - result); //sigmoid
+                    node_error = act_deriv * sum;
                 }
 
                 // calculate weight updates for this node
@@ -475,8 +483,21 @@ fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
     total
 }
 
-fn relu(y: f64) -> f64 {
-	y.max(0.0) //below 0 the output ist 0, above it is output=input (linear)
+#[allow(dead_code)]
+fn sigmoid(y: f64) -> f64 {
+    1f64 / (1f64 + (-y).exp())
+}
+
+#[allow(dead_code)]
+fn pelu(y: f64) -> f64 {
+	if y < 0.0 //PELU activation
+	{
+		PELU_FACTOR_A * ((y / PELU_FACTOR_B).exp() - 1.0)
+	}
+	else
+	{
+		(PELU_FACTOR_A / PELU_FACTOR_B) * y
+	}
 }
 
 

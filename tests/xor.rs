@@ -1,5 +1,4 @@
 extern crate nn;
-extern crate time;
 
 use nn::{NN, HaltCondition, LearningMode};
 
@@ -15,7 +14,7 @@ fn xor_4layers() {
 
     // create a new neural network
     let mut net1 = NN::new(&[2,3,3,1]);
-
+	
     // train the network
     net1.train(&examples)
         .log_interval(Some(1000))

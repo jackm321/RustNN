@@ -12,7 +12,7 @@ are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
 Networks are trained using an incremental training mode.
 
 ## Fork
-This fork adds L2 regularization to the original crate and replaces sigmoid by the relu activation function. Additionally, there are a few minor improvements.
+This fork adds L2 regularization to the original crate and replaces sigmoid by the PELU activation function. Additionally, there are a few minor improvements.
 
 ## XOR example
 
