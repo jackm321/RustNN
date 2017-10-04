@@ -124,7 +124,7 @@ impl<'a,'b> Trainer<'a,'b>  {
 	
 	/// Specifies the lambda factor for L2 regularization used when training (default is 0.0)
 	pub fn lambda(&mut self, lambda: f64) -> &mut Trainer<'a,'b> {
-		if lambda <= 0f64 {
+		if lambda < 0f64 {
 			panic!("the lambda value must be a positive number");
 		}
 		
