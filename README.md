@@ -1,12 +1,8 @@
 # RustNN
 
-[![Build Status](https://travis-ci.org/jackm321/RustNN.svg?branch=master)](https://travis-ci.org/jackm321/RustNN)
-
 An easy to use neural network library written in Rust.
 
-[Crate](https://crates.io/crates/nn)
-  
-[Documentation](https://jackm321.github.io/RustNN/doc/nn/)
+For the documentation take a look at the original library. There is only an additional lambda factor for training.
 
 ## Description
 RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
@@ -14,6 +10,9 @@ library. The library
 generates fully connected multi-layer artificial neural networks that
 are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
 Networks are trained using an incremental training mode.
+
+## Fork
+This fork adds L2 regularization to the original crate and replaces sigmoid by the relu activation function. Additionally, there are a few minor improvements.
 
 ## XOR example
 
