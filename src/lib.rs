@@ -250,12 +250,19 @@ impl NN {
         let mut prev_layer_size = first_layer_size;
         for &layer_size in it {
             let mut layer: Vec<Vec<f64>> = Vec::new();
-			let normal = Normal::new(0.0, (9.0/prev_layer_size as f64).sqrt());
+			let normal = Normal::new(0.0, (1.0/prev_layer_size as f64).sqrt());
             for _ in 0..layer_size {
                 let mut node: Vec<f64> = Vec::new();
-                for _ in 0..prev_layer_size+1 {
-                    let random_weight: f64 = normal.ind_sample(&mut rng);
-                    node.push(random_weight);
+                for i in 0..prev_layer_size+1 {
+					if i == 0 //threshold aka bias
+					{
+						node.push(0.0);
+					}
+					else
+					{
+						let random_weight: f64 = normal.ind_sample(&mut rng);
+						node.push(random_weight);
+					}
                 }
                 node.shrink_to_fit();
                 layer.push(node)
