@@ -81,8 +81,8 @@ const DEFAULT_EPOCHS:u32 = 1000;
 const SELU_FACTOR_A:f64 = 1.06071; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
 const SELU_FACTOR_B:f64 = 1.97126; //alpha in https://arxiv.org/pdf/1706.02515.pdf
 
-const PELU_FACTOR_A:f64 = 2.0;
-const PELU_FACTOR_B:f64 = 10.0;
+const PELU_FACTOR_A:f64 = 1.5;
+const PELU_FACTOR_B:f64 = 2.0;
 
 const LRELU_FACTOR:f64 = 0.33;
 
@@ -480,7 +480,7 @@ impl NN {
 					let act_deriv = match self.out_act { //output activation
 						0 => result * (1.0 - result), //sigmoid
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
-						2 => if result >= 0.0f64 { SELU_FACTOR_A / SELU_FACTOR_B } else { (result + SELU_FACTOR_A) * SELU_FACTOR_B }, //pelu
+						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
 						_ => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
 					};
                     node_error = act_deriv * (targets[node_index] - result);
@@ -493,7 +493,7 @@ impl NN {
 					let act_deriv = match self.hid_act { //hidden activation
 						0 => result * (1.0 - result), //sigmoid
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
-						2 => if result >= 0.0f64 { SELU_FACTOR_A / SELU_FACTOR_B } else { (result + SELU_FACTOR_A) * SELU_FACTOR_B }, //pelu
+						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
 						_ => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
 					};
                     node_error = act_deriv * sum;
