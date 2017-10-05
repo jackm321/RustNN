@@ -69,14 +69,22 @@ use rustc_serialize::json;
 //use rand::Rng;
 use rand::distributions::{Normal, IndependentSample};
 
-const DEFAULT_LEARNING_RATE: f64 = 0.3f64;
-const DEFAULT_LAMBDA: f64 = 0.0f64;
-const DEFAULT_MOMENTUM: f64 = 0.0f64;
-const DEFAULT_EPOCHS: u32 = 1000;
+const DEFAULT_LEARNING_RATE:f64 = 0.3;
+const DEFAULT_LAMBDA:f64 = 0.0;
+const DEFAULT_MOMENTUM:f64 = 0.0;
+const DEFAULT_EPOCHS:u32 = 1000;
 
-//values for a (0,1) distribution (so (-1, 1) interval)
-const SELU_FACTOR_A: f64 = 1.0507f64; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
-const SELU_FACTOR_B: f64 = 1.6733f64; //alpha in https://arxiv.org/pdf/1706.02515.pdf
+//values for a (0,1) distribution (so (-1, 1) interval in standard deviation)
+//const SELU_FACTOR_A:f64 = 1.0507; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
+//const SELU_FACTOR_B:f64 = 1.6733; //alpha in https://arxiv.org/pdf/1706.02515.pdf
+//values for a (0,2) distribution (so (-2, 2) interval in standard deviation)
+const SELU_FACTOR_A:f64 = 1.06071; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
+const SELU_FACTOR_B:f64 = 1.97126; //alpha in https://arxiv.org/pdf/1706.02515.pdf
+
+const PELU_FACTOR_A:f64 = 2.0;
+const PELU_FACTOR_B:f64 = 10.0;
+
+const LRELU_FACTOR:f64 = 0.33;
 
 
 /// Specifies the activation function
@@ -86,6 +94,10 @@ pub enum Activation {
 	Sigmoid,
 	/// SELU activation
 	SELU,
+	/// PELU activation
+	PELU,
+	/// Leaky ReLU activation
+	LRELU,
 }
 
 /// Specifies when to stop training the network
@@ -226,7 +238,8 @@ impl NN {
     /// layer. The first number is the input layer, the last
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
-	/// The activation function can be Sigmoid or SELU. Important: SELU optimized for (-1,1) interval
+	/// The activation function can be Sigmoid, SELU, PELU or LRELU.
+	/// Important: Take care of inputs/outputs for the individual activation functions!
     pub fn new(layers_sizes: &[u32], activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
 
@@ -250,7 +263,7 @@ impl NN {
         let mut prev_layer_size = first_layer_size;
         for &layer_size in it {
             let mut layer: Vec<Vec<f64>> = Vec::new();
-			let normal = Normal::new(0.0, (2.0/prev_layer_size as f64).sqrt());
+			let normal = Normal::new(0.0, (1.0 / prev_layer_size as f64).sqrt()); //2.0 / prev
             for _ in 0..layer_size {
                 let mut node: Vec<f64> = Vec::new();
                 for i in 0..prev_layer_size+1 {
@@ -272,7 +285,13 @@ impl NN {
             prev_layer_size = layer_size;
         }
         layers.shrink_to_fit();
-        NN { layers: layers, num_inputs: first_layer_size, activation: if activation == Activation::Sigmoid { 0 } else { 1 } }
+		let act = match activation {
+			Activation::Sigmoid => 0,
+			Activation::SELU => 1,
+			Activation::PELU => 2,
+			Activation::LRELU => 3,
+		};
+        NN { layers: layers, num_inputs: first_layer_size, activation: act }
     }
 
     /// Runs the network on an input and returns a vector of the results.
@@ -388,7 +407,9 @@ impl NN {
             for node in layer.iter() {
 				match self.activation {
 					0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
-					_ => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
+					1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
+					2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
+					_ => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
 				}
             }
             results.push(layer_results);
@@ -437,7 +458,9 @@ impl NN {
                 if layer_index == layers.len() - 1 {
 					let act_deriv = match self.activation {
 						0 => result * (1.0 - result), //sigmoid
-						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
+						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
+						2 => if result >= 0.0f64 { SELU_FACTOR_A / SELU_FACTOR_B } else { (result + SELU_FACTOR_A) * SELU_FACTOR_B }, //pelu
+						_ => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
 					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
@@ -448,7 +471,9 @@ impl NN {
                     }
 					let act_deriv = match self.activation {
 						0 => result * (1.0 - result), //sigmoid
-						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
+						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
+						2 => if result >= 0.0f64 { SELU_FACTOR_A / SELU_FACTOR_B } else { (result + SELU_FACTOR_A) * SELU_FACTOR_B }, //pelu
+						_ => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
 					};
                     node_error = act_deriv * sum;
                 }
@@ -511,10 +536,32 @@ fn sigmoid(y: f64) -> f64 {
     1f64 / (1f64 + (-y).exp())
 }
 
-fn selu(y: f64) -> f64 {
-	SELU_FACTOR_A * if y <= 0.0 //SELU activation
+fn selu(y: f64) -> f64 { //SELU activation
+	SELU_FACTOR_A * if y < 0.0
 	{
 		SELU_FACTOR_B * y.exp() - SELU_FACTOR_B
+	}
+	else
+	{
+		y
+	}
+}
+
+fn pelu(y: f64) -> f64 { //PELU activation
+	if y < 0.0
+	{
+		SELU_FACTOR_A * (y / SELU_FACTOR_B).exp() - SELU_FACTOR_A
+	}
+	else
+	{
+		(PELU_FACTOR_A / PELU_FACTOR_B) * y
+	}
+}
+
+fn lrelu(y: f64) -> f64 { //LRELU activation
+	if y < 0.0
+	{
+		LRELU_FACTOR * y
 	}
 	else
 	{
