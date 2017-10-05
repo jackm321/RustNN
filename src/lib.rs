@@ -78,6 +78,15 @@ const PELU_FACTOR_A: f64 = 1.0f64;
 const PELU_FACTOR_B: f64 = 1.0f64;
 
 
+/// Specifies the activation function
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Activation {
+	/// Sigmoid activation
+	Sigmoid,
+	/// PELU activation
+	PELU,
+}
+
 /// Specifies when to stop training the network
 #[derive(Debug, Copy, Clone)]
 pub enum HaltCondition {
@@ -207,16 +216,17 @@ impl<'a,'b> Trainer<'a,'b>  {
 pub struct NN {
     layers: Vec<Vec<Vec<f64>>>,
     num_inputs: u32,
+	activation: u32,
 }
 
 impl NN {
-
-    /// Each number in the `layers_sizes` parameter specifies a
+	/// Each number in the `layers_sizes` parameter specifies a
     /// layer in the network. The number itself is the number of nodes in that
     /// layer. The first number is the input layer, the last
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
-    pub fn new(layers_sizes: &[u32]) -> NN {
+	/// The activation function can be Sigmoid or PELU.
+    pub fn new(layers_sizes: &[u32], activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
 
         if layers_sizes.len() < 2 {
@@ -254,7 +264,7 @@ impl NN {
             prev_layer_size = layer_size;
         }
         layers.shrink_to_fit();
-        NN { layers: layers, num_inputs: first_layer_size }
+        NN { layers: layers, num_inputs: first_layer_size, activation: if activation == Activation::Sigmoid { 0 } else { 1 } }
     }
 
     /// Runs the network on an input and returns a vector of the results.
@@ -368,8 +378,10 @@ impl NN {
         for (layer_index, layer) in self.layers.iter().enumerate() {
             let mut layer_results = Vec::new();
             for node in layer.iter() {
-                layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ) //pelu
-				//layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ) //sigmoid
+				match self.activation {
+					0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
+					_ => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
+				}
             }
             results.push(layer_results);
         }
@@ -415,8 +427,10 @@ impl NN {
 				
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
-					let act_deriv = if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }; //pelu
-					//let act_deriv = result * (1.0 - result); //sigmoid
+					let act_deriv = match self.activation {
+						0 => result * (1.0 - result), //sigmoid
+						_ => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
+					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
                     let mut sum = 0f64;
@@ -424,8 +438,10 @@ impl NN {
                     for (next_node, &next_node_error_data) in next_layer_nodes.unwrap().iter().zip((next_layer_errors).iter()) {
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
-					let act_deriv = if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }; //pelu
-					//let act_deriv = result * (1.0 - result); //sigmoid
+					let act_deriv = match self.activation {
+						0 => result * (1.0 - result), //sigmoid
+						_ => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
+					};
                     node_error = act_deriv * sum;
                 }
 
@@ -483,12 +499,10 @@ fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
     total
 }
 
-#[allow(dead_code)]
 fn sigmoid(y: f64) -> f64 {
     1f64 / (1f64 + (-y).exp())
 }
 
-#[allow(dead_code)]
 fn pelu(y: f64) -> f64 {
 	if y < 0.0 //PELU activation
 	{
