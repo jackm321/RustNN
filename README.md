@@ -13,7 +13,7 @@ Networks are trained using an incremental training mode.
 
 ## Fork
 This fork adds L2 regularization and several activation functions to the original crate. Additionally, there are a few minor improvements.
-Lambda can be set just like the learning rate. The activation function gets set in NN::new as second parameter.
+Lambda can be set just like the learning rate. The activation functions for hidden and output gets set in NN::new as second and third parameter respectively.
 
 ## XOR example
 

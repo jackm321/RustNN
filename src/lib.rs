@@ -229,7 +229,8 @@ impl<'a,'b> Trainer<'a,'b>  {
 pub struct NN {
     layers: Vec<Vec<Vec<f64>>>,
     num_inputs: u32,
-	activation: u32,
+	hid_act: u32,
+	out_act: u32,
 }
 
 impl NN {
@@ -240,7 +241,7 @@ impl NN {
     /// last are hidden layers. There must be at least two layers in the network.
 	/// The activation function can be Sigmoid, SELU, PELU or LRELU.
 	/// Important: Take care of inputs/outputs for the individual activation functions!
-    pub fn new(layers_sizes: &[u32], activation: Activation) -> NN {
+    pub fn new(layers_sizes: &[u32], hidden_activation: Activation, output_activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
 
         if layers_sizes.len() < 2 {
@@ -285,13 +286,21 @@ impl NN {
             prev_layer_size = layer_size;
         }
         layers.shrink_to_fit();
-		let act = match activation {
+		
+		//set activation functions
+		let hid_act = match hidden_activation {
 			Activation::Sigmoid => 0,
 			Activation::SELU => 1,
 			Activation::PELU => 2,
 			Activation::LRELU => 3,
 		};
-        NN { layers: layers, num_inputs: first_layer_size, activation: act }
+		let out_act = match output_activation {
+			Activation::Sigmoid => 0,
+			Activation::SELU => 1,
+			Activation::PELU => 2,
+			Activation::LRELU => 3,
+		};
+        NN { layers: layers, num_inputs: first_layer_size, hid_act: hid_act, out_act: out_act }
     }
 
     /// Runs the network on an input and returns a vector of the results.
@@ -405,11 +414,23 @@ impl NN {
         for (layer_index, layer) in self.layers.iter().enumerate() {
             let mut layer_results = Vec::new();
             for node in layer.iter() {
-				match self.activation {
-					0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
-					1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
-					2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
-					_ => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+				if layer_index == self.layers.len()-1 //output layer
+				{
+					match self.out_act {
+						0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
+						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
+						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
+						_ => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+					}
+				}
+				else
+				{
+					match self.hid_act {
+						0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
+						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
+						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
+						_ => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+					}
 				}
             }
             results.push(layer_results);
@@ -456,7 +477,7 @@ impl NN {
 				
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
-					let act_deriv = match self.activation {
+					let act_deriv = match self.out_act { //output activation
 						0 => result * (1.0 - result), //sigmoid
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 						2 => if result >= 0.0f64 { SELU_FACTOR_A / SELU_FACTOR_B } else { (result + SELU_FACTOR_A) * SELU_FACTOR_B }, //pelu
@@ -469,7 +490,7 @@ impl NN {
                     for (next_node, &next_node_error_data) in next_layer_nodes.unwrap().iter().zip((next_layer_errors).iter()) {
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
-					let act_deriv = match self.activation {
+					let act_deriv = match self.hid_act { //hidden activation
 						0 => result * (1.0 - result), //sigmoid
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 						2 => if result >= 0.0f64 { SELU_FACTOR_A / SELU_FACTOR_B } else { (result + SELU_FACTOR_A) * SELU_FACTOR_B }, //pelu
