@@ -2,7 +2,7 @@
 
 An easy to use neural network library written in Rust.
 
-For the documentation take a look at the original library. There is only an additional lambda factor for training.
+For the documentation take a look at the original library or generate it using "cargo doc".
 
 ## Description
 RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
@@ -12,7 +12,7 @@ are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
 Networks are trained using an incremental training mode.
 
 ## Fork
-This fork adds L2 regularization and SELU activation to the original crate. Additionally, there are a few minor improvements.
+This fork adds L2 regularization and several activation functions to the original crate. Additionally, there are a few minor improvements.
 Lambda can be set just like the learning rate. The activation function gets set in NN::new as second parameter.
 
 ## XOR example
