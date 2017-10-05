@@ -437,7 +437,7 @@ impl NN {
                 if layer_index == layers.len() - 1 {
 					let act_deriv = match self.activation {
 						0 => result * (1.0 - result), //sigmoid
-						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_B }, //selu
+						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
@@ -448,7 +448,7 @@ impl NN {
                     }
 					let act_deriv = match self.activation {
 						0 => result * (1.0 - result), //sigmoid
-						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_B }, //selu
+						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 					};
                     node_error = act_deriv * sum;
                 }
