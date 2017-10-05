@@ -1,6 +1,6 @@
 extern crate nn;
 
-use nn::{NN, HaltCondition, LearningMode};
+use nn::{NN, HaltCondition, LearningMode, Activation};
 
 #[test]
 fn xor_4layers() {
@@ -13,7 +13,7 @@ fn xor_4layers() {
     ];
 
     // create a new neural network
-    let mut net1 = NN::new(&[2,3,3,1]);
+    let mut net1 = NN::new(&[2,3,3,1], Activation::LRELU, Activation::Sigmoid);
 	
     // train the network
     net1.train(&examples)
