@@ -12,7 +12,7 @@ are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
 Networks are trained using an incremental training mode.
 
 ## Fork
-This fork adds L2 regularization and PELU activation to the original crate. Additionally, there are a few minor improvements.
+This fork adds L2 regularization and SELU activation to the original crate. Additionally, there are a few minor improvements.
 Lambda can be set just like the learning rate. The activation function gets set in NN::new as second parameter.
 
 ## XOR example

@@ -74,8 +74,9 @@ const DEFAULT_LAMBDA: f64 = 0.0f64;
 const DEFAULT_MOMENTUM: f64 = 0.0f64;
 const DEFAULT_EPOCHS: u32 = 1000;
 
-const PELU_FACTOR_A: f64 = 1.0f64;
-const PELU_FACTOR_B: f64 = 1.0f64;
+//values for a (0,1) distribution (so (-1, 1) interval)
+const SELU_FACTOR_A: f64 = 1.0507f64; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
+const SELU_FACTOR_B: f64 = 1.6733f64; //alpha in https://arxiv.org/pdf/1706.02515.pdf
 
 
 /// Specifies the activation function
@@ -83,8 +84,8 @@ const PELU_FACTOR_B: f64 = 1.0f64;
 pub enum Activation {
 	/// Sigmoid activation
 	Sigmoid,
-	/// PELU activation
-	PELU,
+	/// SELU activation
+	SELU,
 }
 
 /// Specifies when to stop training the network
@@ -225,7 +226,7 @@ impl NN {
     /// layer. The first number is the input layer, the last
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
-	/// The activation function can be Sigmoid or PELU.
+	/// The activation function can be Sigmoid or SELU. Important: SELU optimized for (-1,1) interval
     pub fn new(layers_sizes: &[u32], activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
 
@@ -380,7 +381,7 @@ impl NN {
             for node in layer.iter() {
 				match self.activation {
 					0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
-					_ => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
+					_ => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
 				}
             }
             results.push(layer_results);
@@ -429,7 +430,7 @@ impl NN {
                 if layer_index == layers.len() - 1 {
 					let act_deriv = match self.activation {
 						0 => result * (1.0 - result), //sigmoid
-						_ => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
+						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_B }, //selu
 					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
@@ -440,7 +441,7 @@ impl NN {
                     }
 					let act_deriv = match self.activation {
 						0 => result * (1.0 - result), //sigmoid
-						_ => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
+						_ => if result > 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_B }, //selu
 					};
                     node_error = act_deriv * sum;
                 }
@@ -503,14 +504,14 @@ fn sigmoid(y: f64) -> f64 {
     1f64 / (1f64 + (-y).exp())
 }
 
-fn pelu(y: f64) -> f64 {
-	if y < 0.0 //PELU activation
+fn selu(y: f64) -> f64 {
+	SELU_FACTOR_A * if y <= 0.0 //SELU activation
 	{
-		PELU_FACTOR_A * ((y / PELU_FACTOR_B).exp() - 1.0)
+		SELU_FACTOR_B * y.exp() - SELU_FACTOR_B
 	}
 	else
 	{
-		(PELU_FACTOR_A / PELU_FACTOR_B) * y
+		y
 	}
 }
 
