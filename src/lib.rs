@@ -98,6 +98,8 @@ pub enum Activation {
 	PELU,
 	/// Leaky ReLU activation
 	LRELU,
+	/// Linear activation
+	Linear,
 }
 
 /// Specifies when to stop training the network
@@ -293,12 +295,14 @@ impl NN {
 			Activation::SELU => 1,
 			Activation::PELU => 2,
 			Activation::LRELU => 3,
+			Activation::Linear => 4,
 		};
 		let out_act = match output_activation {
 			Activation::Sigmoid => 0,
 			Activation::SELU => 1,
 			Activation::PELU => 2,
 			Activation::LRELU => 3,
+			Activation::Linear => 4,
 		};
         NN { layers: layers, num_inputs: first_layer_size, hid_act: hid_act, out_act: out_act }
     }
@@ -420,7 +424,8 @@ impl NN {
 						0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
 						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
 						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
-						_ => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+						3 => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+						_ => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
 					}
 				}
 				else
@@ -429,7 +434,8 @@ impl NN {
 						0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
 						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
 						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
-						_ => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+						3 => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
+						_ => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
 					}
 				}
             }
@@ -440,7 +446,7 @@ impl NN {
 
     // updates all weights in the network
     fn update_weights(&mut self, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>, rate: f64, lambda: f64, momentum: f64) {
-        for layer_index in 0..self.layers.len() {
+		for layer_index in 0..self.layers.len() {
             let mut layer = &mut self.layers[layer_index];
             let layer_weight_updates = &network_weight_updates[layer_index];
             for node_index in 0..layer.len() {
@@ -481,7 +487,8 @@ impl NN {
 						0 => result * (1.0 - result), //sigmoid
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
-						_ => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
+						3 => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
+						_ => 1.0, //linear
 					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
@@ -494,7 +501,8 @@ impl NN {
 						0 => result * (1.0 - result), //sigmoid
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
-						_ => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
+						3 => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
+						_ => 1.0, //linear
 					};
                     node_error = act_deriv * sum;
                 }
@@ -588,6 +596,10 @@ fn lrelu(y: f64) -> f64 { //LRELU activation
 	{
 		y
 	}
+}
+
+fn linear(y: f64) -> f64 { //linear activation
+	y
 }
 
 
