@@ -579,7 +579,7 @@ fn selu(y: f64) -> f64 { //SELU activation
 fn pelu(y: f64) -> f64 { //PELU activation
 	if y < 0.0
 	{
-		SELU_FACTOR_A * (y / SELU_FACTOR_B).exp() - SELU_FACTOR_A
+		PELU_FACTOR_A * (y / PELU_FACTOR_B).exp() - PELU_FACTOR_A
 	}
 	else
 	{
