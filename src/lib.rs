@@ -100,6 +100,8 @@ pub enum Activation {
 	LRELU,
 	/// Linear activation
 	Linear,
+	/// Tanh activation
+	Tanh,
 }
 
 /// Specifies when to stop training the network
@@ -241,7 +243,7 @@ impl NN {
     /// layer. The first number is the input layer, the last
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
-	/// The activation function can be Sigmoid, SELU, PELU or LRELU.
+	/// The activation function can be Sigmoid, SELU, PELU, LRELU or Tanh.
 	/// Important: Take care of inputs/outputs for the individual activation functions!
     pub fn new(layers_sizes: &[u32], hidden_activation: Activation, output_activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
@@ -266,7 +268,9 @@ impl NN {
         let mut prev_layer_size = first_layer_size;
         for &layer_size in it {
             let mut layer: Vec<Vec<f64>> = Vec::new();
-			let normal = Normal::new(0.0, (1.0 / prev_layer_size as f64).sqrt()); //2.0 / prev
+			let mut init_std_scale = 2.0; //He init
+			if hidden_activation == Activation::SELU { init_std_scale = 1.0; } //MSRA / Xavier init
+			let normal = Normal::new(0.0, (init_std_scale / prev_layer_size as f64).sqrt());
             for _ in 0..layer_size {
                 let mut node: Vec<f64> = Vec::new();
                 for i in 0..prev_layer_size+1 {
@@ -296,6 +300,7 @@ impl NN {
 			Activation::PELU => 2,
 			Activation::LRELU => 3,
 			Activation::Linear => 4,
+			Activation::Tanh => 5,
 		};
 		let out_act = match output_activation {
 			Activation::Sigmoid => 0,
@@ -303,6 +308,7 @@ impl NN {
 			Activation::PELU => 2,
 			Activation::LRELU => 3,
 			Activation::Linear => 4,
+			Activation::Tanh => 5,
 		};
         NN { layers: layers, num_inputs: first_layer_size, hid_act: hid_act, out_act: out_act }
     }
@@ -425,7 +431,8 @@ impl NN {
 						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
 						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
 						3 => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
-						_ => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
+						4 => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
+						_ => layer_results.push( tanh(modified_dotprod(&node, &results[layer_index])) ), //tanh
 					}
 				}
 				else
@@ -435,7 +442,8 @@ impl NN {
 						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
 						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
 						3 => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
-						_ => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
+						4 => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
+						_ => layer_results.push( tanh(modified_dotprod(&node, &results[layer_index])) ), //tanh
 					}
 				}
             }
@@ -488,7 +496,8 @@ impl NN {
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
 						3 => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
-						_ => 1.0, //linear
+						4 => 1.0, //linear
+						_ => 1.0 - result * result, //tanh
 					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
@@ -502,7 +511,8 @@ impl NN {
 						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
 						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
 						3 => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
-						_ => 1.0, //linear
+						4 => 1.0, //linear
+						_ => 1.0 - result * result, //tanh
 					};
                     node_error = act_deriv * sum;
                 }
@@ -600,6 +610,10 @@ fn lrelu(y: f64) -> f64 { //LRELU activation
 
 fn linear(y: f64) -> f64 { //linear activation
 	y
+}
+
+fn tanh(y: f64) -> f64 { //tanh activation
+	y.tanh()
 }
 
 
