@@ -21,7 +21,7 @@
 //! for more details.
 //!
 //! ```rust
-//! use nn::{NN, HaltCondition};
+//! use nn::{NN, HaltCondition, Activation};
 //!
 //! // create examples of the XOR function
 //! // the network is trained on tuples of vectors where the first vector
@@ -37,7 +37,7 @@
 //! // that specifies the number of layers and the number of nodes in each layer
 //! // in this case we have an input layer with 2 nodes, one hidden layer
 //! // with 3 nodes and the output layer has 1 node
-//! let mut net = NN::new(&[2, 3, 1]);
+//! let mut net = NN::new(&[2, 3, 1], Activation::PELU, Activation::Sigmoid);
 //!
 //! // train the network on the examples of the XOR function
 //! // all methods seen here are optional except go() which must be called to begin training
@@ -57,16 +57,18 @@
 //! }
 //! ```
 
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
 extern crate rand;
-extern crate rustc_serialize;
 
 use HaltCondition::{ Epochs, MSE, Timer };
 use LearningMode::{ Incremental };
 use std::iter::{Zip, Enumerate};
 use std::slice;
 use std::time::{ Duration, Instant };
-use rustc_serialize::json;
-//use rand::Rng;
 use rand::distributions::{Normal, IndependentSample};
 
 const DEFAULT_LEARNING_RATE:f64 = 0.3;
@@ -88,7 +90,7 @@ const LRELU_FACTOR:f64 = 0.33;
 
 
 /// Specifies the activation function
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Activation {
 	/// Sigmoid activation
 	Sigmoid,
@@ -229,12 +231,12 @@ impl<'a,'b> Trainer<'a,'b>  {
 }
 
 /// Neural network
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NN {
     layers: Vec<Vec<Vec<f64>>>,
     num_inputs: u32,
-	hid_act: u32,
-	out_act: u32,
+	hid_act: Activation,
+	out_act: Activation,
 }
 
 impl NN {
@@ -243,8 +245,9 @@ impl NN {
     /// layer. The first number is the input layer, the last
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
-	/// The activation function can be Sigmoid, SELU, PELU, LRELU or Tanh.
+	/// The activation function can be Sigmoid, SELU, PELU, LRELU, Linear or Tanh.
 	/// Important: Take care of inputs/outputs for the individual activation functions!
+	/// Do not use linear activation for hidden layers.
     pub fn new(layers_sizes: &[u32], hidden_activation: Activation, output_activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
 
@@ -293,24 +296,7 @@ impl NN {
         }
         layers.shrink_to_fit();
 		
-		//set activation functions
-		let hid_act = match hidden_activation {
-			Activation::Sigmoid => 0,
-			Activation::SELU => 1,
-			Activation::PELU => 2,
-			Activation::LRELU => 3,
-			Activation::Linear => 4,
-			Activation::Tanh => 5,
-		};
-		let out_act = match output_activation {
-			Activation::Sigmoid => 0,
-			Activation::SELU => 1,
-			Activation::PELU => 2,
-			Activation::LRELU => 3,
-			Activation::Linear => 4,
-			Activation::Tanh => 5,
-		};
-        NN { layers: layers, num_inputs: first_layer_size, hid_act: hid_act, out_act: out_act }
+        NN { layers: layers, num_inputs: first_layer_size, hid_act: hidden_activation, out_act: output_activation }
     }
 
     /// Runs the network on an input and returns a vector of the results.
@@ -343,12 +329,12 @@ impl NN {
 
     /// Encodes the network as a JSON string.
     pub fn to_json(&self) -> String {
-        json::encode(self).ok().expect("encoding JSON failed")
+        serde_json::to_string(self).ok().expect("encoding JSON failed")
     }
 
     /// Builds a new network from a JSON string.
     pub fn from_json(encoded: &str) -> NN {
-        let network: NN = json::decode(encoded).ok().expect("decoding JSON failed");
+        let network:NN = serde_json::from_str(encoded).ok().expect("decoding JSON failed");
         network
     }
 
@@ -424,27 +410,22 @@ impl NN {
         for (layer_index, layer) in self.layers.iter().enumerate() {
             let mut layer_results = Vec::new();
             for node in layer.iter() {
+				let activation;
 				if layer_index == self.layers.len()-1 //output layer
 				{
-					match self.out_act {
-						0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
-						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
-						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
-						3 => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
-						4 => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
-						_ => layer_results.push( tanh(modified_dotprod(&node, &results[layer_index])) ), //tanh
-					}
+					activation = self.out_act;
 				}
 				else
 				{
-					match self.hid_act {
-						0 => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ), //sigmoid
-						1 => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ), //selu
-						2 => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ), //pelu
-						3 => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ), //lrelu
-						4 => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ), //linear
-						_ => layer_results.push( tanh(modified_dotprod(&node, &results[layer_index])) ), //tanh
-					}
+					activation = self.hid_act;
+				}
+				match activation {
+					Activation::Sigmoid => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::SELU => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::PELU => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::LRELU => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::Linear => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::Tanh => layer_results.push( tanh(modified_dotprod(&node, &results[layer_index])) ),
 				}
             }
             results.push(layer_results);
@@ -492,12 +473,12 @@ impl NN {
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
 					let act_deriv = match self.out_act { //output activation
-						0 => result * (1.0 - result), //sigmoid
-						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
-						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
-						3 => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
-						4 => 1.0, //linear
-						_ => 1.0 - result * result, //tanh
+						Activation::Sigmoid => result * (1.0 - result),
+						Activation::SELU => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B },
+						Activation::PELU => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B },
+						Activation::LRELU => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR },
+						Activation::Linear => 1.0,
+						Activation::Tanh => 1.0 - result * result,
 					};
                     node_error = act_deriv * (targets[node_index] - result);
                 } else {
@@ -507,12 +488,12 @@ impl NN {
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
 					let act_deriv = match self.hid_act { //hidden activation
-						0 => result * (1.0 - result), //sigmoid
-						1 => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B }, //selu
-						2 => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B }, //pelu
-						3 => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR }, //lrelu
-						4 => 1.0, //linear
-						_ => 1.0 - result * result, //tanh
+						Activation::Sigmoid => result * (1.0 - result),
+						Activation::SELU => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B },
+						Activation::PELU => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B },
+						Activation::LRELU => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR },
+						Activation::Linear => 1.0,
+						Activation::Tanh => 1.0 - result * result,
 					};
                     node_error = act_deriv * sum;
                 }

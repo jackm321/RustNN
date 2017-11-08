@@ -5,4 +5,29 @@ authors = ["https://github.com/jackm321/RustNN"]
 
 [dependencies]
 rand = "0.3.*"
-rustc-serialize = "0.3.*"
+serde = "1.*"
+serde_derive = "1.*"
+serde_json = "1.*"
+
+
+
+[profile.dev]
+opt-level = 3
+lto = true
+panic = "unwind"
+debug = true
+debug-assertions = true
+
+[profile.test]
+opt-level = 0
+lto = false
+panic = "unwind"
+debug = true
+debug-assertions = true
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "unwind"
+debug = false
+debug-assertions = false

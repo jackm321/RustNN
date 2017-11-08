@@ -13,7 +13,7 @@ fn xor_4layers() {
     ];
 
     // create a new neural network
-    let mut net1 = NN::new(&[2,3,3,1], Activation::LRELU, Activation::Sigmoid);
+    let mut net1 = NN::new(&[2,3,3,1], Activation::PELU, Activation::Sigmoid);
 	
     // train the network
     net1.train(&examples)
