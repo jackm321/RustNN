@@ -27,7 +27,7 @@ given examples. See the documentation for the `NN` and `Trainer` structs
 for more details.
 
 ```rust
-use nn::{NN, HaltCondition};
+use nn::{NN, HaltCondition, Activation};
 
 // create examples of the XOR function
 // the network is trained on tuples of vectors where the first vector
@@ -43,7 +43,7 @@ let examples = [
 // that specifies the number of layers and the number of nodes in each layer
 // in this case we have an input layer with 2 nodes, one hidden layer
 // with 3 nodes and the output layer has 1 node
-let mut net = NN::new(&[2, 3, 1]);
+let mut net = NN::new(&[2, 3, 1], Activation::PELU, Activation::Sigmoid);
     
 // train the network on the examples of the XOR function
 // all methods seen here are optional except go() which must be called to begin training
