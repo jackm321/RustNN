@@ -1,3 +1,5 @@
+//! Modified version, originally from: https://github.com/jackm321/RustNN
+//!
 //! An easy to use neural network library written in Rust.
 //!
 //! # Description
@@ -19,7 +21,7 @@
 //! for more details.
 //!
 //! ```rust
-//! use nn::{NN, HaltCondition};
+//! use nn::{NN, HaltCondition, Activation};
 //!
 //! // create examples of the XOR function
 //! // the network is trained on tuples of vectors where the first vector
@@ -35,7 +37,7 @@
 //! // that specifies the number of layers and the number of nodes in each layer
 //! // in this case we have an input layer with 2 nodes, one hidden layer
 //! // with 3 nodes and the output layer has 1 node
-//! let mut net = NN::new(&[2, 3, 1]);
+//! let mut net = NN::new(&[2, 3, 1], Activation::PELU, Activation::Sigmoid);
 //!
 //! // train the network on the examples of the XOR function
 //! // all methods seen here are optional except go() which must be called to begin training
@@ -55,21 +57,54 @@
 //! }
 //! ```
 
-extern crate rand;
-extern crate rustc_serialize;
-extern crate time;
+#[macro_use]
+extern crate serde_derive;
 
-use HaltCondition::{ Epochs, MSE, Timer };
-use LearningMode::{ Incremental };
+extern crate serde;
+extern crate serde_json;
+extern crate rand;
+
+use HaltCondition::{Epochs, MSE, Timer};
+use LearningMode::{Incremental};
 use std::iter::{Zip, Enumerate};
 use std::slice;
-use rustc_serialize::json;
-use time::{ Duration, PreciseTime };
-use rand::Rng;
+use std::time::{Duration, Instant};
+use rand::distributions::{Normal, IndependentSample};
 
-static DEFAULT_LEARNING_RATE: f64 = 0.3f64;
-static DEFAULT_MOMENTUM: f64 = 0f64;
-static DEFAULT_EPOCHS: u32 = 1000;
+const DEFAULT_LEARNING_RATE:f64 = 0.3;
+const DEFAULT_LAMBDA:f64 = 0.0;
+const DEFAULT_MOMENTUM:f64 = 0.0;
+const DEFAULT_EPOCHS:u32 = 1000;
+
+//values for a (0,1) distribution (so (-1, 1) interval in standard deviation)
+//const SELU_FACTOR_A:f64 = 1.0507; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
+//const SELU_FACTOR_B:f64 = 1.6733; //alpha in https://arxiv.org/pdf/1706.02515.pdf
+//values for a (0,2) distribution (so (-2, 2) interval in standard deviation)
+const SELU_FACTOR_A:f64 = 1.06071; //greater than 1, lambda in https://arxiv.org/pdf/1706.02515.pdf
+const SELU_FACTOR_B:f64 = 1.97126; //alpha in https://arxiv.org/pdf/1706.02515.pdf
+
+const PELU_FACTOR_A:f64 = 1.5;
+const PELU_FACTOR_B:f64 = 2.0;
+
+const LRELU_FACTOR:f64 = 0.33;
+
+
+/// Specifies the activation function
+#[derive(Debug, Copy, Clone, PartialEq, Deserialize, Serialize)]
+pub enum Activation {
+	/// Sigmoid activation
+	Sigmoid,
+	/// SELU activation
+	SELU,
+	/// PELU activation
+	PELU,
+	/// Leaky ReLU activation
+	LRELU,
+	/// Linear activation
+	Linear,
+	/// Tanh activation
+	Tanh,
+}
 
 /// Specifies when to stop training the network
 #[derive(Debug, Copy, Clone)]
@@ -95,6 +130,7 @@ pub struct Trainer<'a,'b> {
     examples: &'b [(Vec<f64>, Vec<f64>)],
     rate: f64,
     momentum: f64,
+	lambda: f64,
     log_interval: Option<u32>,
     halt_condition: HaltCondition,
     learning_mode: LearningMode,
@@ -117,10 +153,20 @@ impl<'a,'b> Trainer<'a,'b>  {
         self.rate = rate;
         self
     }
+	
+	/// Specifies the lambda factor for L2 regularization used when training (default is 0.0)
+	pub fn lambda(&mut self, lambda: f64) -> &mut Trainer<'a,'b> {
+		if lambda < 0f64 {
+			panic!("the lambda value must be a positive number");
+		}
+		
+		self.lambda = lambda;
+		self
+	}
 
     /// Specifies the momentum to be used when training (default is `0.0`)
     pub fn momentum(&mut self, momentum: f64) -> &mut Trainer<'a,'b> {
-        if momentum <= 0f64 {
+        if momentum < 0f64 {
             panic!("momentum must be positive");
         }
 
@@ -175,6 +221,7 @@ impl<'a,'b> Trainer<'a,'b>  {
         self.nn.train_details(
             self.examples,
             self.rate,
+			self.lambda,
             self.momentum,
             self.log_interval,
             self.halt_condition
@@ -184,20 +231,24 @@ impl<'a,'b> Trainer<'a,'b>  {
 }
 
 /// Neural network
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NN {
     layers: Vec<Vec<Vec<f64>>>,
     num_inputs: u32,
+	hid_act: Activation,
+	out_act: Activation,
 }
 
 impl NN {
-
-    /// Each number in the `layers_sizes` parameter specifies a
+	/// Each number in the `layers_sizes` parameter specifies a
     /// layer in the network. The number itself is the number of nodes in that
     /// layer. The first number is the input layer, the last
     /// number is the output layer, and all numbers between the first and
     /// last are hidden layers. There must be at least two layers in the network.
-    pub fn new(layers_sizes: &[u32]) -> NN {
+	/// The activation function can be Sigmoid, SELU, PELU, LRELU, Linear or Tanh.
+	/// Important: Take care of inputs/outputs for the individual activation functions!
+	/// Do not use linear activation for hidden layers.
+    pub fn new(layers_sizes: &[u32], hidden_activation: Activation, output_activation: Activation) -> NN {
         let mut rng = rand::thread_rng();
 
         if layers_sizes.len() < 2 {
@@ -220,11 +271,21 @@ impl NN {
         let mut prev_layer_size = first_layer_size;
         for &layer_size in it {
             let mut layer: Vec<Vec<f64>> = Vec::new();
+			let mut init_std_scale = 2.0; //He init
+			if hidden_activation == Activation::SELU { init_std_scale = 1.0; } //MSRA / Xavier init
+			let normal = Normal::new(0.0, (init_std_scale / prev_layer_size as f64).sqrt());
             for _ in 0..layer_size {
                 let mut node: Vec<f64> = Vec::new();
-                for _ in 0..prev_layer_size+1 {
-                    let random_weight: f64 = rng.gen_range(-0.5f64, 0.5f64);
-                    node.push(random_weight);
+                for i in 0..prev_layer_size+1 {
+					if i == 0 //threshold aka bias
+					{
+						node.push(0.0);
+					}
+					else
+					{
+						let random_weight: f64 = normal.ind_sample(&mut rng);
+						node.push(random_weight);
+					}
                 }
                 node.shrink_to_fit();
                 layer.push(node)
@@ -234,7 +295,8 @@ impl NN {
             prev_layer_size = layer_size;
         }
         layers.shrink_to_fit();
-        NN { layers: layers, num_inputs: first_layer_size }
+		
+        NN { layers: layers, num_inputs: first_layer_size, hid_act: hidden_activation, out_act: output_activation }
     }
 
     /// Runs the network on an input and returns a vector of the results.
@@ -257,6 +319,7 @@ impl NN {
             examples: examples,
             rate: DEFAULT_LEARNING_RATE,
             momentum: DEFAULT_MOMENTUM,
+			lambda: DEFAULT_LAMBDA,
             log_interval: None,
             halt_condition: Epochs(DEFAULT_EPOCHS),
             learning_mode: Incremental,
@@ -266,16 +329,16 @@ impl NN {
 
     /// Encodes the network as a JSON string.
     pub fn to_json(&self) -> String {
-        json::encode(self).ok().expect("encoding JSON failed")
+        serde_json::to_string(self).ok().expect("encoding JSON failed")
     }
 
     /// Builds a new network from a JSON string.
     pub fn from_json(encoded: &str) -> NN {
-        let network: NN = json::decode(encoded).ok().expect("decoding JSON failed");
+        let network:NN = serde_json::from_str(encoded).ok().expect("decoding JSON failed");
         network
     }
 
-    fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
+    fn train_details(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, lambda: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition) -> f64 {
 
         // check that input and output sizes are correct
@@ -290,16 +353,16 @@ impl NN {
             }
         }
 
-        self.train_incremental(examples, rate, momentum, log_interval, halt_condition)
+        self.train_incremental(examples, rate, lambda, momentum, log_interval, halt_condition)
     }
 
-    fn train_incremental(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, momentum: f64, log_interval: Option<u32>,
+    fn train_incremental(&mut self, examples: &[(Vec<f64>, Vec<f64>)], rate: f64, lambda: f64, momentum: f64, log_interval: Option<u32>,
                     halt_condition: HaltCondition) -> f64 {
 
         let mut prev_deltas = self.make_weights_tracker(0.0f64);
         let mut epochs = 0u32;
         let mut training_error_rate = 0f64;
-        let start_time = PreciseTime::now();
+        let start_time = Instant::now();
 
         loop {
 
@@ -321,8 +384,7 @@ impl NN {
                         if training_error_rate <= target_error { break }
                     },
                     Timer(duration) => {
-                        let now = PreciseTime::now();
-                        if start_time.to(now) >= duration { break }
+                        if start_time.elapsed() >= duration { break }
                     }
                 }
             }
@@ -333,7 +395,7 @@ impl NN {
                 let results = self.do_run(&inputs);
                 let weight_updates = self.calculate_weight_updates(&results, &targets);
                 training_error_rate += calculate_error(&results, &targets);
-                self.update_weights(&weight_updates, &mut prev_deltas, rate, momentum)
+                self.update_weights(&weight_updates, &mut prev_deltas, rate, lambda, momentum)
             }
 
             epochs += 1;
@@ -348,7 +410,23 @@ impl NN {
         for (layer_index, layer) in self.layers.iter().enumerate() {
             let mut layer_results = Vec::new();
             for node in layer.iter() {
-                layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) )
+				let activation;
+				if layer_index == self.layers.len()-1 //output layer
+				{
+					activation = self.out_act;
+				}
+				else
+				{
+					activation = self.hid_act;
+				}
+				match activation {
+					Activation::Sigmoid => layer_results.push( sigmoid(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::SELU => layer_results.push( selu(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::PELU => layer_results.push( pelu(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::LRELU => layer_results.push( lrelu(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::Linear => layer_results.push( linear(modified_dotprod(&node, &results[layer_index])) ),
+					Activation::Tanh => layer_results.push( tanh(modified_dotprod(&node, &results[layer_index])) ),
+				}
             }
             results.push(layer_results);
         }
@@ -356,23 +434,22 @@ impl NN {
     }
 
     // updates all weights in the network
-    fn update_weights(&mut self, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>, rate: f64, momentum: f64) {
-        for layer_index in 0..self.layers.len() {
-            let mut layer = &mut self.layers[layer_index];
+    fn update_weights(&mut self, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>, rate: f64, lambda: f64, momentum: f64) {
+		for layer_index in 0..self.layers.len() {
+            let layer = &mut self.layers[layer_index];
             let layer_weight_updates = &network_weight_updates[layer_index];
             for node_index in 0..layer.len() {
-                let mut node = &mut layer[node_index];
+                let node = &mut layer[node_index];
                 let node_weight_updates = &layer_weight_updates[node_index];
                 for weight_index in 0..node.len() {
                     let weight_update = node_weight_updates[weight_index];
                     let prev_delta = prev_deltas[layer_index][node_index][weight_index];
                     let delta = (rate * weight_update) + (momentum * prev_delta);
-                    node[weight_index] += delta;
+                    node[weight_index] = (1.0 - rate * lambda) * node[weight_index] + delta;
                     prev_deltas[layer_index][node_index][weight_index] = delta;
                 }
             }
         }
-
     }
 
     // calculates all weight updates by backpropagation
@@ -382,32 +459,48 @@ impl NN {
         let layers = &self.layers;
         let network_results = &results[1..]; // skip the input layer
         let mut next_layer_nodes: Option<&Vec<Vec<f64>>> = None;
-
+		
         for (layer_index, (layer_nodes, layer_results)) in iter_zip_enum(layers, network_results).rev() {
             let prev_layer_results = &results[layer_index];
             let mut layer_errors = Vec::new();
             let mut layer_weight_updates = Vec::new();
-
-
+			
+			
             for (node_index, (node, &result)) in iter_zip_enum(layer_nodes, layer_results) {
                 let mut node_weight_updates = Vec::new();
-                let mut node_error;
-
+                let node_error;
+				
                 // calculate error for this node
                 if layer_index == layers.len() - 1 {
-                    node_error = result * (1f64 - result) * (targets[node_index] - result);
+					let act_deriv = match self.out_act { //output activation
+						Activation::Sigmoid => result * (1.0 - result),
+						Activation::SELU => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B },
+						Activation::PELU => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B },
+						Activation::LRELU => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR },
+						Activation::Linear => 1.0,
+						Activation::Tanh => 1.0 - result * result,
+					};
+                    node_error = act_deriv * (targets[node_index] - result);
                 } else {
                     let mut sum = 0f64;
                     let next_layer_errors = &network_errors[network_errors.len() - 1];
                     for (next_node, &next_node_error_data) in next_layer_nodes.unwrap().iter().zip((next_layer_errors).iter()) {
                         sum += next_node[node_index+1] * next_node_error_data; // +1 because the 0th weight is the threshold
                     }
-                    node_error = result * (1f64 - result) * sum;
+					let act_deriv = match self.hid_act { //hidden activation
+						Activation::Sigmoid => result * (1.0 - result),
+						Activation::SELU => if result >= 0.0f64 { SELU_FACTOR_A } else { result + SELU_FACTOR_A * SELU_FACTOR_B },
+						Activation::PELU => if result >= 0.0f64 { PELU_FACTOR_A / PELU_FACTOR_B } else { (result + PELU_FACTOR_A) / PELU_FACTOR_B },
+						Activation::LRELU => if result >= 0.0f64 { 1.0 } else { LRELU_FACTOR },
+						Activation::Linear => 1.0,
+						Activation::Tanh => 1.0 - result * result,
+					};
+                    node_error = act_deriv * sum;
                 }
 
                 // calculate weight updates for this node
                 for weight_index in 0..node.len() {
-                    let mut prev_layer_result;
+                    let prev_layer_result;
                     if weight_index == 0 {
                         prev_layer_result = 1f64; // threshold
                     } else {
@@ -461,6 +554,47 @@ fn modified_dotprod(node: &Vec<f64>, values: &Vec<f64>) -> f64 {
 
 fn sigmoid(y: f64) -> f64 {
     1f64 / (1f64 + (-y).exp())
+}
+
+fn selu(y: f64) -> f64 { //SELU activation
+	SELU_FACTOR_A * if y < 0.0
+	{
+		SELU_FACTOR_B * y.exp() - SELU_FACTOR_B
+	}
+	else
+	{
+		y
+	}
+}
+
+fn pelu(y: f64) -> f64 { //PELU activation
+	if y < 0.0
+	{
+		PELU_FACTOR_A * (y / PELU_FACTOR_B).exp() - PELU_FACTOR_A
+	}
+	else
+	{
+		(PELU_FACTOR_A / PELU_FACTOR_B) * y
+	}
+}
+
+fn lrelu(y: f64) -> f64 { //LRELU activation
+	if y < 0.0
+	{
+		LRELU_FACTOR * y
+	}
+	else
+	{
+		y
+	}
+}
+
+fn linear(y: f64) -> f64 { //linear activation
+	y
+}
+
+fn tanh(y: f64) -> f64 { //tanh activation
+	y.tanh()
 }
 
 

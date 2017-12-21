@@ -1,12 +1,8 @@
 # RustNN
 
-[![Build Status](https://travis-ci.org/jackm321/RustNN.svg?branch=master)](https://travis-ci.org/jackm321/RustNN)
-
 An easy to use neural network library written in Rust.
 
-[Crate](https://crates.io/crates/nn)
-  
-[Documentation](https://jackm321.github.io/RustNN/doc/nn/)
+For the documentation take a look at the original library or generate it using "cargo doc".
 
 ## Description
 RustNN is a [feedforward neural network ](http://en.wikipedia.org/wiki/Feedforward_neural_network)
@@ -14,6 +10,10 @@ library. The library
 generates fully connected multi-layer artificial neural networks that
 are trained via [backpropagation](http://en.wikipedia.org/wiki/Backpropagation).
 Networks are trained using an incremental training mode.
+
+## Fork
+This fork adds L2 regularization and several activation functions to the original crate. Additionally, there are a few minor improvements.
+Lambda can be set just like the learning rate. The activation functions for hidden and output gets set in NN::new as second and third parameter respectively.
 
 ## XOR example
 
@@ -27,7 +27,7 @@ given examples. See the documentation for the `NN` and `Trainer` structs
 for more details.
 
 ```rust
-use nn::{NN, HaltCondition};
+use nn::{NN, HaltCondition, Activation};
 
 // create examples of the XOR function
 // the network is trained on tuples of vectors where the first vector
@@ -43,7 +43,7 @@ let examples = [
 // that specifies the number of layers and the number of nodes in each layer
 // in this case we have an input layer with 2 nodes, one hidden layer
 // with 3 nodes and the output layer has 1 node
-let mut net = NN::new(&[2, 3, 1]);
+let mut net = NN::new(&[2, 3, 1], Activation::PELU, Activation::Sigmoid);
     
 // train the network on the examples of the XOR function
 // all methods seen here are optional except go() which must be called to begin training
