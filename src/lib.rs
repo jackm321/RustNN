@@ -64,11 +64,11 @@ extern crate serde;
 extern crate serde_json;
 extern crate rand;
 
-use HaltCondition::{ Epochs, MSE, Timer };
-use LearningMode::{ Incremental };
+use HaltCondition::{Epochs, MSE, Timer};
+use LearningMode::{Incremental};
 use std::iter::{Zip, Enumerate};
 use std::slice;
-use std::time::{ Duration, Instant };
+use std::time::{Duration, Instant};
 use rand::distributions::{Normal, IndependentSample};
 
 const DEFAULT_LEARNING_RATE:f64 = 0.3;
@@ -436,10 +436,10 @@ impl NN {
     // updates all weights in the network
     fn update_weights(&mut self, network_weight_updates: &Vec<Vec<Vec<f64>>>, prev_deltas: &mut Vec<Vec<Vec<f64>>>, rate: f64, lambda: f64, momentum: f64) {
 		for layer_index in 0..self.layers.len() {
-            let mut layer = &mut self.layers[layer_index];
+            let layer = &mut self.layers[layer_index];
             let layer_weight_updates = &network_weight_updates[layer_index];
             for node_index in 0..layer.len() {
-                let mut node = &mut layer[node_index];
+                let node = &mut layer[node_index];
                 let node_weight_updates = &layer_weight_updates[node_index];
                 for weight_index in 0..node.len() {
                     let weight_update = node_weight_updates[weight_index];
